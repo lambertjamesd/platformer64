@@ -1,0 +1,34 @@
+#include "src/nu64sys.h"
+
+beginseg
+	name "code"
+	flags BOOT OBJECT
+	entry boot
+	stack bootStack + STACKSIZE
+	include "codesegment.o"
+	include "$(ROOT)/usr/lib/PR/rspboot.o"
+	include "$(ROOT)/usr/lib/PR/gspFast3D.o"
+	include "$(ROOT)/usr/lib/PR/gspF3DEX2.xbus.o"
+	include "$(ROOT)/usr/lib/PR/gspF3DEX2.fifo.o"
+endseg
+
+beginseg
+	name "cfb"
+	flags OBJECT
+	address	0x80100000
+	include "src/cfb.o"
+endseg
+
+beginseg
+	name "buffer"
+	flags OBJECT
+	address	0x80280000
+	include "src/buffer.o"
+endseg
+
+beginwave
+	name "debugger"
+	include "code"
+	include "cfb"
+	include "buffer"
+endwave
