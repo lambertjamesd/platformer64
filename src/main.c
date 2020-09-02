@@ -143,9 +143,11 @@ public	void	mainproc(void *arg)
   osViBlack(0);
   n_WaitMesg(retrace);
   initcontroller();
-  OSThread* threadPtr = &mainThread;
+  initRenderScene();
 
 #if USE_DEBUGGER
+
+  OSThread* threadPtr = &mainThread;
   enum GDBError err = gdbInitDebugger(handler, &n_dmaMessageQ, &threadPtr, 1);
   
   if (err != GDBErrorNone) {

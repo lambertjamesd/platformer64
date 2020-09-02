@@ -3,5 +3,6 @@
 #define _RENDER_H
 
 void renderScene(u16* cfb);
+void initRenderScene();
 
 #endif

@@ -4,7 +4,9 @@
 
 #include "nu64sys.h"
 #include "render.h"
-#include "../debugger/serial.h"
+#include "debugger/serial.h"
+#include "src/math/quaternion.h"
+#include "src/render/sceneview.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -39,10 +41,10 @@ static OSTask taskHeader = {
 };
 
 static Vtx vertices[] = {
-    { -64,  64, -5, 0, 0, 0, 0, 0xff, 0, 0xff	},
-    { 64,  64, -5, 0, 0, 0, 0, 0, 0, 0xff	},
-    { 64, -64, -5, 0, 0, 0, 0, 0, 0xff, 0xff	},
-    { -64, -64, -5, 0, 0, 0, 0xff, 0, 0, 0xff	},
+    { -64,  64, 0, 0, 0, 0, 0, 0xff, 0, 0xff	},
+    { 64,  64, 0, 0, 0, 0, 0, 0, 0, 0xff	},
+    { 64, -64, 0, 0, 0, 0, 0, 0, 0xff, 0xff	},
+    { -64, -64, 0, 0, 0, 0, 0xff, 0, 0, 0xff	},
 };
 
 static Vp vp = {
@@ -53,13 +55,28 @@ static Vp vp = {
 static float theta;
 Mtx projection;
 Mtx modeling;
+struct Camera camera;
 
 Gfx* clear(u16* cfb) {
     guOrtho(&projection,
 		-(float)SCREEN_WD/2.0F, (float)SCREEN_WD/2.0F,
 		-(float)SCREEN_HT/2.0F, (float)SCREEN_HT/2.0F,
 		1.0F, 10.0F, 1.0F);
-	guRotate(&modeling, theta, 0.0F, 0.0F, 1.0F);
+    Mtx cameraView;
+    Mtx rotate;
+
+    struct Quaternion qRotate;
+    quatAxisAngle(&gForward, theta, &qRotate);
+
+    float fMtx[4][4];
+
+    quatToMatrix(&qRotate, fMtx);
+    guMtxF2L(fMtx, &rotate);
+
+    cameraCalcView(&camera, fMtx);
+    guMtxF2L(fMtx, &cameraView);
+
+    guMtxCatL(&rotate, &cameraView, &modeling);
 
     osWritebackDCache(&projection, sizeof(Mtx));
     osWritebackDCache(&modeling, sizeof(Mtx));
@@ -141,4 +158,9 @@ void renderScene(u16* cfb) {
 	    (void)osRecvMesg(&n_retraceMessageQ, &dummyMessage, OS_MESG_BLOCK);
     }
 	(void)osRecvMesg(&n_retraceMessageQ, &dummyMessage, OS_MESG_BLOCK);
+}
+
+void initRenderScene() {
+    camera.rotation.w = 1.0f;
+    camera.position.z = 5.0f;
 }
