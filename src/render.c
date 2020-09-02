@@ -56,32 +56,39 @@ static float theta;
 Mtx projection;
 Mtx modeling;
 struct Camera camera;
+struct Quaternion rotateByFrame;
 
 Gfx* clear(u16* cfb) {
     guOrtho(&projection,
 		-(float)SCREEN_WD/2.0F, (float)SCREEN_WD/2.0F,
 		-(float)SCREEN_HT/2.0F, (float)SCREEN_HT/2.0F,
-		1.0F, 10.0F, 1.0F);
+		1.0F, 256.0F, 1.0F);
     Mtx cameraView;
     Mtx rotate;
 
     struct Quaternion qRotate;
-    quatAxisAngle(&gForward, theta, &qRotate);
 
     float fMtx[4][4];
 
-    quatToMatrix(&qRotate, fMtx);
-    guMtxF2L(fMtx, &rotate);
+    quatMultiply(&camera.rotation, &rotateByFrame, &qRotate);
+    camera.rotation = qRotate;
+
+    // quatAxisAngle(&gRight, theta, &camera.rotation);
 
     cameraCalcView(&camera, fMtx);
     guMtxF2L(fMtx, &cameraView);
+
+    quatAxisAngle(&gUp, theta, &qRotate);
+    quatToMatrix(&qRotate, fMtx);
+    guMtxF2L(fMtx, &rotate);
+    guMtxIdent(&rotate);
 
     guMtxCatL(&rotate, &cameraView, &modeling);
 
     osWritebackDCache(&projection, sizeof(Mtx));
     osWritebackDCache(&modeling, sizeof(Mtx));
 
-    theta += 0.1f;
+    theta += 0.01f;
 
     Gfx* dl = globalDL;
     gSPSegment(dl++, 0, 0x0);
@@ -162,5 +169,7 @@ void renderScene(u16* cfb) {
 
 void initRenderScene() {
     camera.rotation.w = 1.0f;
-    camera.position.z = 5.0f;
+    camera.position.z = 128.0f;
+
+    quatAxisAngle(&gForward, 0.1f, &rotateByFrame);
 }

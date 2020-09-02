@@ -48,7 +48,7 @@ void quatMultiply(struct Quaternion* a, struct Quaternion* b, struct Quaternion*
     out->x = a->w*b->x + a->x*b->w + a->y*b->z - a->z*b->y;
     out->y = a->w*b->y + a->y*b->w + a->z*b->x - a->x*b->z;
     out->z = a->w*b->z + a->z*b->w + a->x*b->y - a->y*b->x;
-    out->w = a->w*b->w - a->x*b->x + a->y*b->y - a->z*b->z;
+    out->w = a->w*b->w - a->x*b->x - a->y*b->y - a->z*b->z;
 }
 
 void quatToMatrix(struct Quaternion* q, float out[4][4]) {
@@ -64,7 +64,7 @@ void quatToMatrix(struct Quaternion* q, float out[4][4]) {
     float yw = q->y*q->w;
     float zw = q->z*q->w;
 
-    out[0][0] = 1.0f - 2.0f * (xx + zz);
+    out[0][0] = 1.0f - 2.0f * (yy + zz);
     out[0][1] = 2.0f * (xy - zw);
     out[0][2] = 2.0f * (xz + yw);
     out[0][3] = 0.0f;
@@ -73,8 +73,8 @@ void quatToMatrix(struct Quaternion* q, float out[4][4]) {
     out[1][2] = 2.0f * (yz - xw);
     out[1][3] = 0.0f;
     out[2][0] = 2.0f * (xz - yw);
-    out[2][1] = 2.0f * (xz - yw);
-    out[2][1] = 1.0f - 2.0f * (yy + zz);
+    out[2][1] = 2.0f * (yz + xw);
+    out[2][2] = 1.0f - 2.0f * (xx + yy);
     out[2][3] = 0.0f;
     out[3][0] = 0.0f;
     out[3][1] = 0.0f;

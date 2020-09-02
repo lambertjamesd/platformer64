@@ -10,4 +10,6 @@ extern struct Vector3 gRight;
 extern struct Vector3 gUp;
 extern struct Vector3 gForward;
 
+void vector3Negate(struct Vector3* in, struct Vector3* out);
+
 #endif
