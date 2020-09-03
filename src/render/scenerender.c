@@ -1,63 +1,57 @@
 
 #include "scenerender.h"
 
-void sceneRenderInit(struct SceneRenderState* sceneRender) {
-    sceneRender->usedMaterials = 0;
-    sceneRenderPreFrame(sceneRender);
+void materialBatcherInit(struct SceneMaterialBatcher* materialBatcher) {
+    materialBatcher->usedMaterials = 0;
+    materialBatcherPreFrame(materialBatcher);
 }
 
-void sceneRenderPreFrame(struct SceneRenderState* sceneRender) {
-    sceneRender->usedObjects = 0;
+void materialBatcherPreFrame(struct SceneMaterialBatcher* materialBatcher) {
+    materialBatcher->usedObjects = 0;
 
     int i;
     for (i = 0; i < MAX_MATERIAL_BATCHES; ++i) {
-        sceneRender->objectsByMaterial[i] = NULL;
+        materialBatcher->objectsByMaterial[i] = NULL;
     }
 }
 
-MaterialId sceneRenderMatId(struct SceneRenderState* sceneRender, Gfx* material) {
+MaterialId materialBatcherMatId(struct SceneMaterialBatcher* materialBatcher, Gfx* material) {
     int i;
 
-    for (i = 0; i < sceneRender->usedMaterials; ++i) {
-        if (sceneRender->materials[i] == material) {
+    for (i = 0; i < materialBatcher->usedMaterials; ++i) {
+        if (materialBatcher->materials[i] == material) {
             return i;
         }   
     }
 
-    if (sceneRender->usedMaterials == MAX_MATERIAL_BATCHES) {
+    if (materialBatcher->usedMaterials == MAX_MATERIAL_BATCHES) {
         return NO_MATERIAL;
     } else {
-        sceneRender->materials[i] = material;
-        return sceneRender->usedMaterials++;
+        materialBatcher->materials[i] = material;
+        return materialBatcher->usedMaterials++;
     }
 }
 
-void sceneRenderDrawDynamic(struct SceneRenderState* sceneRender, Gfx* geometry, Mtx* mtx, MaterialId material) {
-    if (sceneRender->usedObjects != MAX_SCENE_OBJECTS && material != NO_MATERIAL) {
-        struct SceneRenderObject* next = &sceneRender->objectsToRender[sceneRender->usedObjects];
+void materialBatcherDrawDynamic(struct SceneMaterialBatcher* materialBatcher, Gfx* geometry, Mtx* mtx, MaterialId material) {
+    if (materialBatcher->usedObjects != MAX_SCENE_OBJECTS && material != NO_MATERIAL) {
+        struct SceneRenderObject* next = &materialBatcher->objectsToRender[materialBatcher->usedObjects];
 
         next->matrix = *mtx;
         next->geometry = geometry;
-        next->next = sceneRender->objectsByMaterial[material];
-        sceneRender->objectsByMaterial[material] = next;
+        next->next = materialBatcher->objectsByMaterial[material];
+        materialBatcher->objectsByMaterial[material] = next;
 
-        ++sceneRender->usedObjects;
+        ++materialBatcher->usedObjects;
     }
 }
 
-Gfx* sceneRenderGenDL(struct SceneRenderState* sceneRender) {
-    Gfx* dl = sceneRender->dl;
-
-    gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&sceneRender->perspectiveMtx), G_MTX_PROJECTION|G_MTX_LOAD|G_MTX_NOPUSH);
-    gSPPerspNormalize(dl++, sceneRender->perspectiveNorm);
-    gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&sceneRender->viewMtx), G_MTX_MODELVIEW|G_MTX_LOAD|G_MTX_NOPUSH);
-
+Gfx* materialBatcherGenDL(struct SceneMaterialBatcher* materialBatcher, Gfx* dl) {
     int i;
-    for (i = 0; i < sceneRender->usedMaterials; ++i) {
-        if (sceneRender->objectsByMaterial[i]) {
-            gSPDisplayList(dl++, sceneRender->materials[i]);
+    for (i = 0; i < materialBatcher->usedMaterials; ++i) {
+        if (materialBatcher->objectsByMaterial[i]) {
+            gSPDisplayList(dl++, materialBatcher->materials[i]);
 
-            struct SceneRenderObject* curr = sceneRender->objectsByMaterial[i];
+            struct SceneRenderObject* curr = materialBatcher->objectsByMaterial[i];
 
             while (curr) {
                 gSPMatrix(dl++, &curr->matrix, G_MTX_MODELVIEW|G_MTX_PUSH|G_MTX_MUL);
@@ -69,6 +63,5 @@ Gfx* sceneRenderGenDL(struct SceneRenderState* sceneRender) {
         }
     }
 
-    gSPEndDisplayList(dl);
     return dl;
 }

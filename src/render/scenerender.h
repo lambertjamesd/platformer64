@@ -18,22 +18,18 @@ struct SceneRenderObject {
     struct SceneRenderObject* next;
 };
 
-struct SceneRenderState {
-    Mtx viewMtx;
-    Mtx perspectiveMtx;
+struct SceneMaterialBatcher {
     struct SceneRenderObject objectsToRender[MAX_SCENE_OBJECTS];
     Gfx* materials[MAX_MATERIAL_BATCHES];
     struct SceneRenderObject* objectsByMaterial[MAX_MATERIAL_BATCHES];
-    Gfx dl[MAX_DL_LENGTH];
     u16 usedMaterials;
     u16 usedObjects;
-    u16 perspectiveNorm;
 };
 
-void sceneRenderInit(struct SceneRenderState* sceneRender);
-void sceneRenderPreFrame(struct SceneRenderState* sceneRender);
-MaterialId sceneRenderMatId(struct SceneRenderState* sceneRender, Gfx* material);
-void sceneRenderDrawDynamic(struct SceneRenderState* sceneRender, Gfx* geometry, Mtx* mtx, MaterialId material);
-Gfx* sceneRenderGenDL(struct SceneRenderState* sceneRender);
+void materialBatcherInit(struct SceneMaterialBatcher* materialBatcher);
+void materialBatcherPreFrame(struct SceneMaterialBatcher* materialBatcher);
+MaterialId materialBatcherMatId(struct SceneMaterialBatcher* materialBatcher, Gfx* material);
+void materialBatcherDrawDynamic(struct SceneMaterialBatcher* materialBatcher, Gfx* geometry, Mtx* mtx, MaterialId material);
+Gfx* materialBatcherGenDL(struct SceneMaterialBatcher* materialBatcher, Gfx* dl);
 
 #endif
