@@ -43,7 +43,8 @@ CODEFILES   = $(DEBUGGERFILES) src/nu64sys.c \
 	src/render.c \
 	src/math/vector.c \
 	src/math/quaternion.c \
-	src/render/sceneview.c
+	src/render/sceneview.c \
+	src/render/scenerender.c
 
 CODEOBJECTS =	$(CODEFILES:.c=.o)
 

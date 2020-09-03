@@ -55,6 +55,7 @@ static Vp vp = {
 static float theta;
 Mtx projection;
 Mtx modeling;
+u16 perspectiveCorrect;
 struct Camera camera;
 struct Quaternion rotateByFrame;
 
@@ -63,6 +64,7 @@ Gfx* clear(u16* cfb) {
 		-(float)SCREEN_WD/2.0F, (float)SCREEN_WD/2.0F,
 		-(float)SCREEN_HT/2.0F, (float)SCREEN_HT/2.0F,
 		1.0F, 256.0F, 1.0F);
+    guPerspective(&projection, &perspectiveCorrect, 70.0f, 4.0f / 3.0f, 1.0f, 256.0f, 1.0f);
     Mtx cameraView;
     Mtx rotate;
 
@@ -78,10 +80,9 @@ Gfx* clear(u16* cfb) {
     cameraCalcView(&camera, fMtx);
     guMtxF2L(fMtx, &cameraView);
 
-    quatAxisAngle(&gUp, theta, &qRotate);
+    quatAxisAngle(&gRight, theta, &qRotate);
     quatToMatrix(&qRotate, fMtx);
     guMtxF2L(fMtx, &rotate);
-    guMtxIdent(&rotate);
 
     guMtxCatL(&rotate, &cameraView, &modeling);
 
@@ -124,6 +125,7 @@ Gfx* clear(u16* cfb) {
 
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&projection), G_MTX_PROJECTION|G_MTX_LOAD|G_MTX_NOPUSH);
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&modeling), G_MTX_MODELVIEW|G_MTX_LOAD|G_MTX_NOPUSH);
+    gSPPerspNormalize(dl++, perspectiveCorrect);
     gDPPipeSync(dl++);
 
     gDPSetCycleType(dl++, G_CYC_1CYCLE);
@@ -169,7 +171,7 @@ void renderScene(u16* cfb) {
 
 void initRenderScene() {
     camera.rotation.w = 1.0f;
-    camera.position.z = 128.0f;
+    camera.position.z = 200.0f;
 
-    quatAxisAngle(&gForward, 0.1f, &rotateByFrame);
+    quatAxisAngle(&gUp, 0.01f, &rotateByFrame);
 }
