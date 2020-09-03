@@ -41,10 +41,10 @@ static OSTask taskHeader = {
 };
 
 static Vtx vertices[] = {
-    { -64,  64, 0, 0, 0, 0, 0, 0xff, 0, 0xff	},
-    { 64,  64, 0, 0, 0, 0, 0, 0, 0, 0xff	},
-    { 64, -64, 0, 0, 0, 0, 0, 0, 0xff, 0xff	},
-    { -64, -64, 0, 0, 0, 0, 0xff, 0, 0, 0xff	},
+    { -640, -64,  640, 0, 0, 0, 0, 0xff, 0, 0xff	},
+    { 640, -64,  640, 0, 0, 0, 0, 0, 0, 0xff	},
+    { 640, -64, -640, 0, 0, 0, 0, 0, 0xff, 0xff	},
+    { -640, -64, -640, 0, 0, 0, 0xff, 0, 0, 0xff	},
 };
 
 static Vp vp = {
@@ -63,17 +63,23 @@ Gfx* clear(u16* cfb) {
     guOrtho(&projection,
 		-(float)SCREEN_WD/2.0F, (float)SCREEN_WD/2.0F,
 		-(float)SCREEN_HT/2.0F, (float)SCREEN_HT/2.0F,
-		1.0F, 256.0F, 1.0F);
-    guPerspective(&projection, &perspectiveCorrect, 70.0f, 4.0f / 3.0f, 1.0f, 256.0f, 1.0f);
+		1.0F, 1024.0F, 1.0F);
+    guPerspective(&projection, &perspectiveCorrect, 70.0f, 4.0f / 3.0f, 1.0f, 1024.0f, 1.0f);
     Mtx cameraView;
     Mtx rotate;
 
     struct Quaternion qRotate;
+    struct Vector3 offset;
 
     float fMtx[4][4];
 
     quatMultiply(&camera.rotation, &rotateByFrame, &qRotate);
     camera.rotation = qRotate;
+
+    quatMultVector(&camera.rotation, &gForward, &offset);
+    vector3Scale(&offset, &offset, 128.0f);
+    // camera.position = offset;
+
 
     // quatAxisAngle(&gRight, theta, &camera.rotation);
 
@@ -83,6 +89,7 @@ Gfx* clear(u16* cfb) {
     quatAxisAngle(&gRight, theta, &qRotate);
     quatToMatrix(&qRotate, fMtx);
     guMtxF2L(fMtx, &rotate);
+    guMtxIdent(&rotate);
 
     guMtxCatL(&rotate, &cameraView, &modeling);
 

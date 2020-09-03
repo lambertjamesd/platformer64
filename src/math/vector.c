@@ -10,3 +10,9 @@ void vector3Negate(struct Vector3* in, struct Vector3* out) {
     out->y = -in->y;
     out->z = -in->z;
 }
+
+void vector3Scale(struct Vector3* in, struct Vector3* out, float scale) {
+    out->x = in->x * scale;
+    out->y = in->y * scale;
+    out->z = in->z * scale;
+}
