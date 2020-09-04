@@ -9,8 +9,9 @@
 #include	"nu64sys.h"
 #include	"thread.h"
 #include	"graph.h"
-#include  "../debugger/debugger.h"
-#include "render.h"
+#include  "debugger/debugger.h"
+#include  "render.h"
+#include  "src/render/sceneview.h"
 
 extern u16	cfb_16_a[];
 extern u16	cfb_16_b[];
@@ -154,6 +155,13 @@ public	void	mainproc(void *arg)
     sprintf(gTmpBuffer, "Error initializing debugger %d", err);
     println(gTmpBuffer);
   }
+#else
+  enum GDBError err = gdbSerialInit(handler, &n_dmaMessageQ);
+
+  if (err != GDBErrorNone) {
+    sprintf(gTmpBuffer, "Error initializing debugger %d", err);
+    println(gTmpBuffer);
+  }
 #endif
 
   println("Start polling");
@@ -166,6 +174,22 @@ public	void	mainproc(void *arg)
     readControllers();
     trig = lastbutton & (lastbutton & ~trig);
     hold = lastbutton;
+
+    struct Quaternion qRotate;
+    struct Quaternion rotateByFrame;
+
+    quatAxisAngle(&gRight, (float)lasty * 0.0001f, &rotateByFrame);
+    quatMultiply(&rotateByFrame, &camera.rotation, &qRotate);
+
+    quatAxisAngle(&gUp, (float)lastx * 0.0001f, &rotateByFrame);
+    quatMultiply(&qRotate, &rotateByFrame, &camera.rotation);
+
+    if (hold & (CONT_A | CONT_B)) {
+      struct Vector3 offset;
+      quatMultVector(&camera.rotation, &gForward, &offset);
+      vector3Scale(&offset, &offset, (hold & CONT_A) ? -1.0f : 1.0f);
+      vector3Add(&camera.position, &offset, &camera.position);
+    }
 
     renderScene( cfb_tbl[frame] );
     frame ^= 1;

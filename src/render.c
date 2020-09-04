@@ -73,16 +73,6 @@ Gfx* clear(u16* cfb) {
 
     float fMtx[4][4];
 
-    quatMultiply(&camera.rotation, &rotateByFrame, &qRotate);
-    camera.rotation = qRotate;
-
-    quatMultVector(&camera.rotation, &gForward, &offset);
-    vector3Scale(&offset, &offset, 128.0f);
-    // camera.position = offset;
-
-
-    // quatAxisAngle(&gRight, theta, &camera.rotation);
-
     cameraCalcView(&camera, fMtx);
     guMtxF2L(fMtx, &cameraView);
 

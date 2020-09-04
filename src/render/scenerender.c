@@ -1,5 +1,6 @@
 
 #include "scenerender.h"
+#include "src/system/fastalloc.h"
 
 void materialBatcherInit(struct SceneMaterialBatcher* materialBatcher) {
     materialBatcher->usedMaterials = 0;
@@ -34,9 +35,9 @@ MaterialId materialBatcherMatId(struct SceneMaterialBatcher* materialBatcher, Gf
 
 void materialBatcherDrawDynamic(struct SceneMaterialBatcher* materialBatcher, Gfx* geometry, Mtx* mtx, MaterialId material) {
     if (materialBatcher->usedObjects != MAX_SCENE_OBJECTS && material != NO_MATERIAL) {
-        struct SceneRenderObject* next = &materialBatcher->objectsToRender[materialBatcher->usedObjects];
+        struct SceneRenderObject* next = (struct SceneRenderObject*)fastalloc(sizeof(struct SceneRenderObject));
 
-        next->matrix = *mtx;
+        next->matrix = mtx;
         next->geometry = geometry;
         next->next = materialBatcher->objectsByMaterial[material];
         materialBatcher->objectsByMaterial[material] = next;
@@ -54,7 +55,7 @@ Gfx* materialBatcherGenDL(struct SceneMaterialBatcher* materialBatcher, Gfx* dl)
             struct SceneRenderObject* curr = materialBatcher->objectsByMaterial[i];
 
             while (curr) {
-                gSPMatrix(dl++, &curr->matrix, G_MTX_MODELVIEW|G_MTX_PUSH|G_MTX_MUL);
+                gSPMatrix(dl++, curr->matrix, G_MTX_MODELVIEW|G_MTX_PUSH|G_MTX_MUL);
                 gSPDisplayList(dl++, curr->geometry);
                 gSPPopMatrix(dl++, G_MTX_MODELVIEW);
 

@@ -13,13 +13,12 @@
 typedef long MaterialId;
 
 struct SceneRenderObject {
-    Mtx matrix;
+    Mtx* matrix;
     Gfx* geometry;
     struct SceneRenderObject* next;
 };
 
 struct SceneMaterialBatcher {
-    struct SceneRenderObject objectsToRender[MAX_SCENE_OBJECTS];
     Gfx* materials[MAX_MATERIAL_BATCHES];
     struct SceneRenderObject* objectsByMaterial[MAX_MATERIAL_BATCHES];
     u16 usedMaterials;

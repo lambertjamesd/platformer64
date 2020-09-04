@@ -16,3 +16,8 @@ void vector3Scale(struct Vector3* in, struct Vector3* out, float scale) {
     out->y = in->y * scale;
     out->z = in->z * scale;
 }
+void vector3Add(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
+    out->x = a->x + b->x;
+    out->y = a->y + b->y;
+    out->z = a->z + b->z;   
+}
