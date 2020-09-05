@@ -7,17 +7,18 @@ void sceneViewInit(struct SceneView* scene) {
 
 void cameraCalcView(struct Camera* camera, float result[4][4]) {
     // guTranslateF(result, 0.0f, 0.0f, -5.0f);
-    struct Vector3 offset;
+    // struct Vector3 offset;
     struct Quaternion invRotate;
 
-    vector3Negate(&camera->position, &offset);
+    // quatMultVector(&invRotate, &camera->position, &offset);
+
+    float rotate[4][4];
+    float offsetMat[4][4];
 
     quatConjugate(&camera->rotation, &invRotate);
-    quatMultVector(&invRotate, &offset, &offset);
+    quatToMatrix(&invRotate, rotate);
 
-    quatToMatrix(&invRotate, result);
+    guTranslateF(offsetMat, -camera->position.x, -camera->position.y, -camera->position.z);
 
-    result[3][0] += offset.x;
-    result[3][1] += offset.y;
-    result[3][2] += offset.z;
+    guMtxCatF(offsetMat, rotate, result);
 }

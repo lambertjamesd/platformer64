@@ -57,7 +57,6 @@ Mtx projection;
 Mtx modeling;
 u16 perspectiveCorrect;
 struct Camera camera;
-struct Quaternion rotateByFrame;
 
 Gfx* clear(u16* cfb) {
     guOrtho(&projection,
@@ -168,7 +167,4 @@ void renderScene(u16* cfb) {
 
 void initRenderScene() {
     camera.rotation.w = 1.0f;
-    camera.position.z = 200.0f;
-
-    quatAxisAngle(&gUp, 0.01f, &rotateByFrame);
 }

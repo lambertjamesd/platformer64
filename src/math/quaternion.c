@@ -1,6 +1,7 @@
 
 #include "quaternion.h"
 #include <ultra64.h>
+#include "src/system/assert.h"
 
 void quatIdent(struct Quaternion* q) {
     q->x = 0.0f;
@@ -33,7 +34,7 @@ void quatMultVector(struct Quaternion* q, struct Vector3* a, struct Vector3* out
     asQuat.x = a->x;
     asQuat.y = a->y;
     asQuat.z = a->z;
-    asQuat.w = 0;
+    asQuat.w = 0.0f;
 
     quatMultiply(q, &asQuat, &tmp);
     quatConjugate(q, &conj);
@@ -45,6 +46,7 @@ void quatMultVector(struct Quaternion* q, struct Vector3* a, struct Vector3* out
 }
 
 void quatMultiply(struct Quaternion* a, struct Quaternion* b, struct Quaternion* out) {
+    assert(a != out && b != out);
     out->x = a->w*b->x + a->x*b->w + a->y*b->z - a->z*b->y;
     out->y = a->w*b->y + a->y*b->w + a->z*b->x - a->x*b->z;
     out->z = a->w*b->z + a->z*b->w + a->x*b->y - a->y*b->x;
@@ -65,15 +67,15 @@ void quatToMatrix(struct Quaternion* q, float out[4][4]) {
     float zw = q->z*q->w;
 
     out[0][0] = 1.0f - 2.0f * (yy + zz);
-    out[0][1] = 2.0f * (xy - zw);
-    out[0][2] = 2.0f * (xz + yw);
+    out[0][1] = 2.0f * (xy + zw);
+    out[0][2] = 2.0f * (xz - yw);
     out[0][3] = 0.0f;
-    out[1][0] = 2.0f * (xy + zw);
+    out[1][0] = 2.0f * (xy - zw);
     out[1][1] = 1.0f - 2.0f * (xx + zz);
-    out[1][2] = 2.0f * (yz - xw);
+    out[1][2] = 2.0f * (yz + xw);
     out[1][3] = 0.0f;
-    out[2][0] = 2.0f * (xz - yw);
-    out[2][1] = 2.0f * (yz + xw);
+    out[2][0] = 2.0f * (xz + yw);
+    out[2][1] = 2.0f * (yz - xw);
     out[2][2] = 1.0f - 2.0f * (xx + yy);
     out[2][3] = 0.0f;
     out[3][0] = 0.0f;
