@@ -7,6 +7,7 @@
 #include "debugger/serial.h"
 #include "src/math/quaternion.h"
 #include "src/render/sceneview.h"
+#include "src/level/test/header.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -47,6 +48,13 @@ static Vtx vertices[] = {
     { -640, -64, -640, 0, 0, 0, 0xff, 0, 0, 0xff	},
 };
 
+static Vtx tex_vtx[] =  {
+    { -64,  64, -5, 0, (0 << 6), (0 << 6), 0xff, 0xff, 0xff, 0xff},
+    {  64,  64, -5, 0, (4 << 6), (0 << 6), 0xff, 0xff, 0xff, 0xff},
+    {  64, -64, -5, 0, (4 << 6), (4 << 6), 0xff, 0xff, 0xff, 0xff},
+    { -64, -64, -5, 0, (0 << 6), (4 << 6), 0xff, 0xff, 0xff, 0xff},
+};
+
 static Vp vp = {
 	SCREEN_WD*2, SCREEN_HT*2, G_MAXZ/2, 0,	/* scale */
 	SCREEN_WD*2, SCREEN_HT*2, G_MAXZ/2, 0,	/* translate */
@@ -55,6 +63,7 @@ static Vp vp = {
 static float theta;
 Mtx projection;
 Mtx modeling;
+Mtx worldScale;
 u16 perspectiveCorrect;
 struct Camera camera;
 
@@ -85,14 +94,16 @@ Gfx* clear(u16* cfb) {
     osWritebackDCache(&projection, sizeof(Mtx));
     osWritebackDCache(&modeling, sizeof(Mtx));
 
+    guScale(&worldScale, 1.0f / 256.0f, 1.0f / 256.0f, 1.0f / 256.0f);
+
     theta += 0.01f;
 
     Gfx* dl = globalDL;
     gSPSegment(dl++, 0, 0x0);
     gDPSetCycleType(dl++, G_CYC_FILL);
     gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, cfb);
-    gDPSetFillColor(dl++, GPACK_RGBA5551(255,1,1,1) << 16 | 
-		     GPACK_RGBA5551(255,1,1,1));
+    gDPSetFillColor(dl++, GPACK_RGBA5551(255,255,1,1) << 16 | 
+		     GPACK_RGBA5551(255,255,1,1));
     gDPSetScissor(dl++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WD, SCREEN_HT);
     gDPFillRectangle(dl++, 0, 0, SCREEN_WD, SCREEN_HT);
     gDPPipeSync(dl++);
@@ -124,14 +135,9 @@ Gfx* clear(u16* cfb) {
     gSPPerspNormalize(dl++, perspectiveCorrect);
     gDPPipeSync(dl++);
 
-    gDPSetCycleType(dl++, G_CYC_1CYCLE);
-    gDPSetRenderMode(dl++, G_RM_AA_OPA_SURF, G_RM_AA_OPA_SURF2);
-    gSPSetGeometryMode(dl++, G_SHADE | G_SHADING_SMOOTH);
-
-    gSPVertex(dl++, &vertices, 4, 0);
-    gSP1Triangle(dl++, 0, 1, 2, 0);
-    gSP1Triangle(dl++, 2, 3, 0, 0);
-    // gSP2Triangles(dl++, 0, 1, 2, 0, 2, 3, 0, 0);
+    gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&worldScale), G_MTX_MODELVIEW|G_MTX_MUL|G_MTX_PUSH);
+    gSPDisplayList(dl++, test_TestLayout_mesh);
+    gSPPopMatrix(dl++, G_MTX_MODELVIEW);
 
 	gDPFullSync(dl++);
 	gSPEndDisplayList(dl++);

@@ -23,7 +23,7 @@ u16	*cfb_tbl[2] = {
 #define NUM_LINES 24
 #define NUM_COLS  70
 
-#define USE_DEBUGGER  1
+#define USE_DEBUGGER  0
 
 char textGrid[NUM_LINES][NUM_COLS + 1];
 u8 nextLineIndex;
@@ -178,16 +178,16 @@ public	void	mainproc(void *arg)
     struct Quaternion qRotate;
     struct Quaternion rotateByFrame;
 
-    quatAxisAngle(&gRight, (float)lasty * -0.0001f, &rotateByFrame);
+    quatAxisAngle(&gRight, (float)lasty * 0.0001f, &rotateByFrame);
     quatMultiply(&camera.rotation, &rotateByFrame, &qRotate);
 
-    quatAxisAngle(&gUp, (float)lastx * 0.0001f, &rotateByFrame);
+    quatAxisAngle(&gUp, (float)lastx * -0.0001f, &rotateByFrame);
     quatMultiply(&rotateByFrame, &qRotate, &camera.rotation);
 
     if (hold & (CONT_A | CONT_B)) {
       struct Vector3 offset;
       quatMultVector(&camera.rotation, &gForward, &offset);
-      vector3Scale(&offset, &offset, (hold & CONT_A) ? -1.0f : 1.0f);
+      vector3Scale(&offset, &offset, (hold & CONT_A) ? -1.0f / 30.0f : 1.0f / 30.0f);
       vector3Add(&camera.position, &offset, &camera.position);
     }
 

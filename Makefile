@@ -33,10 +33,12 @@ HFILES =	$(DEBUGGERHFILES) src/graph.h \
 	src/thread.h \
 	src/render.h
 
+LEVEL_TEST_FILES = src/level/test/level.c
+
 DEBUGGERFILES = debugger/serial.c \
 	debugger/debugger.c
 
-CODEFILES   = $(DEBUGGERFILES) src/nu64sys.c \
+CODEFILES   = $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/main.c \
 	src/graph.c \
 	src/asci.c \

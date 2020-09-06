@@ -22,3 +22,20 @@ void cameraCalcView(struct Camera* camera, float result[4][4]) {
 
     guMtxCatF(offsetMat, rotate, result);
 }
+
+void calcTransform(struct Vector3* pos, struct Quaternion* rot, float scale, float result[4][4]) {
+    quatToMatrix(rot, result);
+    result[0][0] *= scale;
+    result[0][1] *= scale;
+    result[0][2] *= scale;
+    result[1][0] *= scale;
+    result[1][1] *= scale;
+    result[1][2] *= scale;
+    result[2][0] *= scale;
+    result[2][1] *= scale;
+    result[2][2] *= scale;
+
+    result[3][0] += pos->x;
+    result[3][1] += pos->y;
+    result[3][2] += pos->z;
+}

@@ -23,5 +23,6 @@ extern struct Camera camera;
 void sceneViewInit(struct SceneView* scene);
 
 void cameraCalcView(struct Camera* camera, float result[4][4]);
+void calcTransform(struct Vector3* pos, struct Quaternion* rot, float scale, float result[4][4]);
 
 #endif
