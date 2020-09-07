@@ -13,12 +13,7 @@
 #include  "render.h"
 #include  "src/render/sceneview.h"
 
-extern u16	cfb_16_a[];
-extern u16	cfb_16_b[];
-
-u16	*cfb_tbl[2] = {
-  cfb_16_a, cfb_16_b
-};
+u16	*cfb_tbl[2];
 
 #define NUM_LINES 24
 #define NUM_COLS  70
@@ -112,15 +107,6 @@ static void     readControllers(void)
   lasty = pad->stick_y;
 }
 
-void start_display(void)
-{
-  int i;
-  for (i = 0; i < SCREEN_WD * SCREEN_HT; i ++){
-    cfb_16_a[i] = GPACK_RGBA5551(0,0,0,1);
-    cfb_16_b[i] = GPACK_RGBA5551(0,0,0,1);
-  } 
-}
-
 u32 __gdbGetWatch();
 
 static long long __align;
@@ -136,10 +122,12 @@ public	void	mainproc(void *arg)
   handler = osCartRomInit();
   frame = 0;
 
+  cfb_tbl[1] = (u16*)OS_PHYSICAL_TO_K0(osMemSize - sizeof(u16) * SCREEN_WD * SCREEN_HT);
+  cfb_tbl[0] = cfb_tbl[1] - sizeof(u16) * SCREEN_WD * SCREEN_HT;
+
   osViSetMode(&osViModeTable[OS_VI_NTSC_HPF1]);
   osViBlack(1);
   osViSwapBuffer( cfb_tbl[frame] );
-  start_display();
   
   osViBlack(0);
   n_WaitMesg(retrace);

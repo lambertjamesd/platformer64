@@ -67,8 +67,7 @@ public	OSMesgQueue	cartMessageQ;
 private	OSMesg		cartMessageBuf;
 
 
-extern	u32		cfb_16_a[];
-extern	u32		cfb_16_b[];
+extern  u16   zbuffer[];
 
 
 /*---------------------------------------------------------------------*
@@ -76,15 +75,6 @@ extern	u32		cfb_16_b[];
  *---------------------------------------------------------------------*/
 private	void	idle(void *arg)
 {
-  
-  int i;
-  u16	*p  =	(u16 *)cfb_16_a;
-
-  /*
-   *		Initialize Vi manager
-   */
-  for(i=0; i<SCREEN_HT*SCREEN_WD; i++)
-    *p++ = 0x0000;
   osCreateViManager(OS_PRIORITY_VIMGR);
 
 #if	SCREEN_LOW
@@ -92,9 +82,6 @@ private	void	idle(void *arg)
 #else
   osViSetMode(&osViModeTable[OS_VI_NTSC_HPF1]);
 #endif
-
-
-  osViSwapBuffer(cfb_16_a);
   
   /*
    *		Initialize Pi manager

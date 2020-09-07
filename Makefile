@@ -52,7 +52,7 @@ CODEFILES   = $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 
 CODEOBJECTS =	$(CODEFILES:.c=.o)
 
-DATAFILES   =	src/cfb.c
+DATAFILES   =	src/zbuffer.c
 
 DATAOBJECTS =	$(DATAFILES:.c=.o)
 

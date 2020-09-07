@@ -6,5 +6,4 @@
 #include <ultra64.h>
 #include "nu64sys.h"
 
-u16	cfb_16_a[SCREEN_WD*SCREEN_HT];
-u16	cfb_16_b[SCREEN_WD*SCREEN_HT];
+u16	zbuffer[SCREEN_WD*SCREEN_HT];

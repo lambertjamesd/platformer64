@@ -67,6 +67,8 @@ Mtx worldScale;
 u16 perspectiveCorrect;
 struct Camera camera;
 
+extern u16 zbuffer[];
+
 Gfx* clear(u16* cfb) {
     guOrtho(&projection,
 		-(float)SCREEN_WD/2.0F, (float)SCREEN_WD/2.0F,
@@ -101,6 +103,17 @@ Gfx* clear(u16* cfb) {
     Gfx* dl = globalDL;
     gSPSegment(dl++, 0, 0x0);
     gDPSetCycleType(dl++, G_CYC_FILL);
+
+    // gDPSetDepthSource(dl++, G_ZS_PIXEL);
+    // gDPSetDepthImage(dl++, zbuffer);
+
+    // gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, zbuffer);
+    // gDPSetFillColor(dl++,
+    //                 GPACK_ZDZ(G_MAXFBZ, 0) << 16 | GPACK_ZDZ(G_MAXFBZ, 0));
+
+    // gDPFillRectangle(dl++, 0, 0, SCREEN_WD - 1,
+    //                  SCREEN_HT - 1);
+
     gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, cfb);
     gDPSetFillColor(dl++, GPACK_RGBA5551(255,255,1,1) << 16 | 
 		     GPACK_RGBA5551(255,255,1,1));

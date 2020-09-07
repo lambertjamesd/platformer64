@@ -13,22 +13,14 @@ beginseg
 endseg
 
 beginseg
-	name "cfb"
+	name "zbuffer"
 	flags OBJECT
-	address	0x80100000
-	include "src/cfb.o"
-endseg
-
-beginseg
-	name "buffer"
-	flags OBJECT
-	address	0x80280000
-	include "src/buffer.o"
+	align 64
+	include "src/zbuffer.o"
 endseg
 
 beginwave
 	name "debugger"
 	include "code"
-	include "cfb"
-	include "buffer"
+	include "zbuffer"
 endwave
