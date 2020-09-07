@@ -8,6 +8,7 @@
 #include "src/math/quaternion.h"
 #include "src/render/sceneview.h"
 #include "src/level/test/header.h"
+#include "src/system/align.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -104,15 +105,13 @@ Gfx* clear(u16* cfb) {
     gSPSegment(dl++, 0, 0x0);
     gDPSetCycleType(dl++, G_CYC_FILL);
 
-    // gDPSetDepthSource(dl++, G_ZS_PIXEL);
-    // gDPSetDepthImage(dl++, zbuffer);
+    gDPSetDepthSource(dl++, G_ZS_PIXEL);
+    gDPSetDepthImage(dl++, ALIGN_64_BYTES((u32)zbuffer));
 
-    // gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, zbuffer);
-    // gDPSetFillColor(dl++,
-    //                 GPACK_ZDZ(G_MAXFBZ, 0) << 16 | GPACK_ZDZ(G_MAXFBZ, 0));
-
-    // gDPFillRectangle(dl++, 0, 0, SCREEN_WD - 1,
-    //                  SCREEN_HT - 1);
+    gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, ALIGN_64_BYTES((u32)zbuffer));
+    gDPSetFillColor(dl++, GPACK_ZDZ(G_MAXFBZ, 0) << 16 | GPACK_ZDZ(G_MAXFBZ, 0));
+    gDPFillRectangle(dl++, 0, 0, SCREEN_WD, SCREEN_HT);
+    gDPPipeSync(dl++);
 
     gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, cfb);
     gDPSetFillColor(dl++, GPACK_RGBA5551(255,255,1,1) << 16 | 
@@ -139,8 +138,8 @@ Gfx* clear(u16* cfb) {
     gDPPipeSync(dl++);
 
     gSPViewport(dl++, &vp);
-    gSPClearGeometryMode(dl++, G_ZBUFFER | G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_CULL_FRONT | G_CULL_BACK | G_FOG | G_LIGHTING | G_SHADE);
-    gSPSetGeometryMode(dl++, G_SHADING_SMOOTH);
+    gSPClearGeometryMode(dl++, G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_CULL_FRONT | G_CULL_BACK | G_FOG | G_LIGHTING | G_SHADE);
+    gSPSetGeometryMode(dl++, G_ZBUFFER | G_SHADING_SMOOTH);
     gSPTexture(dl++, 0, 0, 0, 0, G_OFF);
 
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&projection), G_MTX_PROJECTION|G_MTX_LOAD|G_MTX_NOPUSH);

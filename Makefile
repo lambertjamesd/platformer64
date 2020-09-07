@@ -15,9 +15,9 @@ LCDEFS          = -DDEBUG -DF3DEX_GBI_2
 N64LIB          = -lultra_d
 endif
 
-APP =		debugger.out
+APP =		platformer.out
 
-TARGETS =	debugger.n64
+TARGETS =	platformer.n64
 
 MAKEROM = /home/james/go/src/github.com/trhodeos/spicy/cmd/spicy/spicy \
 	--as_command=mips64-elf-as \
@@ -38,7 +38,7 @@ LEVEL_TEST_FILES = src/level/test/level.c
 DEBUGGERFILES = debugger/serial.c \
 	debugger/debugger.c
 
-CODEFILES   = $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
+CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/main.c \
 	src/graph.c \
 	src/asci.c \
@@ -52,7 +52,7 @@ CODEFILES   = $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 
 CODEOBJECTS =	$(CODEFILES:.c=.o)
 
-DATAFILES   =	src/zbuffer.c
+DATAFILES   = 
 
 DATAOBJECTS =	$(DATAFILES:.c=.o)
 

@@ -12,15 +12,7 @@ beginseg
 	include "$(ROOT)/usr/lib/PR/gspF3DEX2.fifo.o"
 endseg
 
-beginseg
-	name "zbuffer"
-	flags OBJECT
-	align 64
-	include "src/zbuffer.o"
-endseg
-
 beginwave
-	name "debugger"
+	name "platformer"
 	include "code"
-	include "zbuffer"
 endwave
