@@ -12,6 +12,7 @@
 #include  "debugger/debugger.h"
 #include  "render.h"
 #include  "src/render/sceneview.h"
+#include  "src/player/cameraman.h"
 
 u16	*cfb_tbl[2];
 
@@ -41,6 +42,8 @@ static u32 	seed =1;
  */
 extern OSMesgQueue  n_dmaMessageQ;
 OSPiHandle          *handler;
+
+extern struct Vector3 target;
 
 void println(char* text)
 {
@@ -167,16 +170,16 @@ public	void	mainproc(void *arg)
     struct Quaternion rotateByFrame;
 
     quatAxisAngle(&gRight, (float)lasty * 0.0001f, &rotateByFrame);
-    quatMultiply(&camera.rotation, &rotateByFrame, &qRotate);
+    quatMultiply(&gCameraMan.camera.rotation, &rotateByFrame, &qRotate);
 
     quatAxisAngle(&gUp, (float)lastx * -0.0001f, &rotateByFrame);
-    quatMultiply(&rotateByFrame, &qRotate, &camera.rotation);
+    quatMultiply(&rotateByFrame, &qRotate, &gCameraMan.camera.rotation);
 
     if (hold & (CONT_A | CONT_B)) {
       struct Vector3 offset;
-      quatMultVector(&camera.rotation, &gForward, &offset);
+      quatMultVector(&gCameraMan.camera.rotation, &gForward, &offset);
       vector3Scale(&offset, &offset, (hold & CONT_A) ? -1.0f / 30.0f : 1.0f / 30.0f);
-      vector3Add(&camera.position, &offset, &camera.position);
+      vector3Add(&target, &offset, &target);
     }
 
     renderScene( cfb_tbl[frame] );

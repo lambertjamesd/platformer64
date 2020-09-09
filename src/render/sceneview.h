@@ -18,8 +18,6 @@ struct SceneView {
     struct Camera camera;
 };
 
-extern struct Camera camera;
-
 void sceneViewInit(struct SceneView* scene);
 
 void cameraCalcView(struct Camera* camera, float result[4][4]);

@@ -9,6 +9,7 @@
 #include "src/render/sceneview.h"
 #include "src/level/test/header.h"
 #include "src/system/align.h"
+#include "src/player/cameraman.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -66,16 +67,13 @@ Mtx projection;
 Mtx modeling;
 Mtx worldScale;
 u16 perspectiveCorrect;
-struct Camera camera;
+
+struct Vector3 target = {0.0f, 2.0f, 0.0f};
 
 extern u16 zbuffer[];
 
 Gfx* clear(u16* cfb) {
-    guOrtho(&projection,
-		-(float)SCREEN_WD/2.0F, (float)SCREEN_WD/2.0F,
-		-(float)SCREEN_HT/2.0F, (float)SCREEN_HT/2.0F,
-		1.0F, 1024.0F, 1.0F);
-    guPerspective(&projection, &perspectiveCorrect, 70.0f, 4.0f / 3.0f, 1.0f, 1024.0f, 1.0f);
+    guPerspective(&projection, &perspectiveCorrect, 70.0f, 4.0f / 3.0f, 1.0f, 128.0f, 1.0f);
     Mtx cameraView;
     Mtx rotate;
 
@@ -84,7 +82,7 @@ Gfx* clear(u16* cfb) {
 
     float fMtx[4][4];
 
-    cameraCalcView(&camera, fMtx);
+    cameraCalcView(&gCameraMan.camera, fMtx);
     guMtxF2L(fMtx, &cameraView);
 
     quatAxisAngle(&gRight, theta, &qRotate);
@@ -99,27 +97,32 @@ Gfx* clear(u16* cfb) {
 
     guScale(&worldScale, 1.0f / 256.0f, 1.0f / 256.0f, 1.0f / 256.0f);
 
+    u16* color = cfb;
+    u16* zbuf = (u16*)ALIGN_64_BYTES((u32)zbuffer);
+
     theta += 0.01f;
 
     Gfx* dl = globalDL;
     gSPSegment(dl++, 0, 0x0);
+    gDPSetScissor(dl++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WD, SCREEN_HT);
+
     gDPSetCycleType(dl++, G_CYC_FILL);
 
-    gDPSetDepthSource(dl++, G_ZS_PIXEL);
-    gDPSetDepthImage(dl++, ALIGN_64_BYTES((u32)zbuffer));
-
-    gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, ALIGN_64_BYTES((u32)zbuffer));
+    gDPSetDepthImage(dl++, zbuf);
+    gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, zbuf);
     gDPSetFillColor(dl++, GPACK_ZDZ(G_MAXFBZ, 0) << 16 | GPACK_ZDZ(G_MAXFBZ, 0));
-    gDPFillRectangle(dl++, 0, 0, SCREEN_WD, SCREEN_HT);
     gDPPipeSync(dl++);
+    gDPFillRectangle(dl++, 0, 0, SCREEN_WD-1, SCREEN_HT-1);
+	gDPPipeSync(dl++);
 
     gDPSetColorImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, SCREEN_WD, cfb);
     gDPSetFillColor(dl++, GPACK_RGBA5551(255,255,1,1) << 16 | 
 		     GPACK_RGBA5551(255,255,1,1));
-    gDPSetScissor(dl++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WD, SCREEN_HT);
-    gDPFillRectangle(dl++, 0, 0, SCREEN_WD, SCREEN_HT);
+    gDPPipeSync(dl++);
+    gDPFillRectangle(dl++, 0, 0, SCREEN_WD-1, SCREEN_HT-1);
     gDPPipeSync(dl++);
 
+    gDPSetDepthSource(dl++, G_ZS_PIXEL);
     gDPPipelineMode(dl++, G_PM_1PRIMITIVE);
     gDPSetCombineMode(dl++, G_CC_SHADE, G_CC_SHADE);
     gDPSetTextureLOD(dl++, G_TL_TILE);
@@ -131,7 +134,7 @@ Gfx* clear(u16* cfb) {
     gDPSetCycleType(dl++, G_CYC_1CYCLE);
     gDPSetCombineKey(dl++, G_CK_NONE);
     gDPSetAlphaCompare(dl++, G_AC_NONE);
-    gDPSetRenderMode(dl++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+    gDPSetRenderMode(dl++, G_RM_ZB_OPA_SURF, G_RM_ZB_OPA_SURF);
     gDPSetBlendMask(dl++, 0xff);
     gDPSetColorDither(dl++, G_CD_DISABLE);
     
@@ -157,6 +160,8 @@ Gfx* clear(u16* cfb) {
 }
 
 void renderScene(u16* cfb) {
+    cameraManUpdate(&gCameraMan, &target);
+
     OSMesg dummyMessage;
     OSTask *task = &taskHeader;
     task->t.ucode_boot = rspbootTextStart;
@@ -184,5 +189,5 @@ void renderScene(u16* cfb) {
 }
 
 void initRenderScene() {
-    camera.rotation.w = 1.0f;
+    gCameraMan.camera.rotation.w = 1.0f;
 }

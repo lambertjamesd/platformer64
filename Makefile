@@ -19,12 +19,6 @@ APP =		platformer.out
 
 TARGETS =	platformer.n64
 
-MAKEROM = /home/james/go/src/github.com/trhodeos/spicy/cmd/spicy/spicy \
-	--as_command=mips64-elf-as \
-	--cpp_command=cpp \
-	--ld_command=mips64-elf-ld \
-	--objcopy_command=mips64-elf-objcopy
-
 DEBUGGERHFILES = debugger/serial.h \
 	debugger/debugger.h
 
@@ -45,10 +39,14 @@ CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/render.c \
 	src/math/vector.c \
 	src/math/quaternion.c \
+	src/math/fastsqrt.c \
 	src/render/sceneview.c \
 	src/render/scenerender.c \
 	src/system/fastalloc.c \
-	src/system/assert.c
+	src/system/assert.c \
+	src/player/playerrender.c \
+	src/player/geo/geo.c \
+	src/player/cameraman.c
 
 CODEOBJECTS =	$(CODEFILES:.c=.o)
 
