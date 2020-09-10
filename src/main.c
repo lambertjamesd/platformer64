@@ -169,16 +169,32 @@ public	void	mainproc(void *arg)
     struct Quaternion qRotate;
     struct Quaternion rotateByFrame;
 
-    quatAxisAngle(&gRight, (float)lasty * 0.0001f, &rotateByFrame);
-    quatMultiply(&gCameraMan.camera.rotation, &rotateByFrame, &qRotate);
+    if (hold & (L_CBUTTONS | R_CBUTTONS)) {
+      quatAxisAngle(&gUp, (hold & L_CBUTTONS) ? -0.01f : 0.01f, &rotateByFrame);
+      quatMultiply(&gCameraMan.camera.rotation, &rotateByFrame, &qRotate);
+      gCameraMan.camera.rotation = qRotate;
+    }
 
-    quatAxisAngle(&gUp, (float)lastx * -0.0001f, &rotateByFrame);
-    quatMultiply(&rotateByFrame, &qRotate, &gCameraMan.camera.rotation);
+    // quatAxisAngle(&gRight, (float)lasty * 0.0001f, &rotateByFrame);
+    // quatMultiply(&gCameraMan.camera.rotation, &rotateByFrame, &qRotate);
 
-    if (hold & (CONT_A | CONT_B)) {
+    if (lasty != 0) {
       struct Vector3 offset;
       quatMultVector(&gCameraMan.camera.rotation, &gForward, &offset);
-      vector3Scale(&offset, &offset, (hold & CONT_A) ? -1.0f / 30.0f : 1.0f / 30.0f);
+      offset.y = 0.0f;
+      vector3Normalize(&offset, &offset);
+
+      vector3Scale(&offset, &offset, (float)lasty * -0.001f);
+      vector3Add(&target, &offset, &target);
+    }
+
+    if (lastx != 0) {
+      struct Vector3 offset;
+      quatMultVector(&gCameraMan.camera.rotation, &gRight, &offset);
+      offset.y = 0.0f;
+      vector3Normalize(&offset, &offset);
+
+      vector3Scale(&offset, &offset, (float)lastx * 0.001f);
       vector3Add(&target, &offset, &target);
     }
 
