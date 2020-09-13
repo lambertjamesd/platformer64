@@ -27,7 +27,7 @@ void vector3Add(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
 void vector3Sub(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
     out->x = a->x - b->x;
     out->y = a->y - b->y;
-    out->z = a->z - b->z;   
+    out->z = a->z - b->z;
 }
 
 void vector3Normalize(struct Vector3* in, struct Vector3* out) {

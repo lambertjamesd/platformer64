@@ -2,7 +2,7 @@
 
 include $(ROOT)/usr/include/make/PRdefs
 
-FINAL = YES
+# FINAL = YES
 
 ifeq ($(FINAL), YES)
 # OPTIMIZER       = -O2
@@ -12,7 +12,8 @@ N64LIB          = -lultra_rom
 else
 OPTIMIZER       = -g
 LCDEFS          = -DDEBUG -DF3DEX_GBI_2
-N64LIB          = -lultra_d
+# N64LIB          = -lultra_d
+N64LIB          = -lultra_rom
 endif
 
 APP =		platformer.out
@@ -37,6 +38,7 @@ CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/graph.c \
 	src/asci.c \
 	src/render.c \
+	src/collision/collisionmesh.c \
 	src/math/vector.c \
 	src/math/quaternion.c \
 	src/math/fastsqrt.c \
@@ -56,6 +58,8 @@ DATAOBJECTS =	$(DATAFILES:.c=.o)
 
 CODESEGMENT =	codesegment.o
 
+DEPS = $(CODEFILES:.c=.d) $(DATAFILES:.c=.d)
+
 OBJECTS =	$(CODESEGMENT) $(DATAOBJECTS)
 
 LCINCS =	-I. -I$(ROOT)/usr/include/PR -I $(ROOT)/usr/include
@@ -66,19 +70,25 @@ LDIRT  =	$(APP)
 
 default:	$(TARGETS)
 
+%.d: %.c
+	$(CC) $(GCINCS) $(LCINCS) -MF"$@" -MG -MM -MP -MT"$@" -MT"$(<:.c=.o)" "$<"
+
+-include $(DEPS)
+
 include $(COMMONRULES)
 
 $(CODESEGMENT):	$(CODEOBJECTS)
 		$(LD) -o $(CODESEGMENT) -r $(CODEOBJECTS) $(LDFLAGS)
 
-ifeq ($(FINAL), YES)
+# ifeq ($(FINAL), YES)
 $(TARGETS) $(APP):      src/spec $(OBJECTS)
 	$(MAKEROM) -s 9 -r $(TARGETS) src/spec
 	makemask $(TARGETS)
-else
-$(TARGETS) $(APP):      src/spec $(OBJECTS)
-	$(MAKEROM) -r $(TARGETS) src/spec
-endif
+# else
+# $(TARGETS) $(APP):      src/spec $(OBJECTS)
+# 	$(MAKEROM) -r $(TARGETS) src/spec
+# 	makemask $(TARGETS)
+# endif
 
 cleanall: clean
-	rm -f $(CODEOBJECTS) $(OBJECTS)
+	rm -f $(CODEOBJECTS) $(OBJECTS) $(DEPS)

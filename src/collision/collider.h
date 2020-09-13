@@ -1,0 +1,26 @@
+
+#ifndef _COLLISION_COLLIDER_TYPE_H
+#define _COLLISION_COLLIDER_TYPE_H
+
+#include "src/math/vector.h"
+
+enum ColliderType {
+    ColliderTypeMeshFace,
+    ColliderTypeMeshEdge,
+    ColliderTypeMeshEdgeEnd0,
+    ColliderTypeMeshEdgeEnd1,
+};
+
+struct CollisionLocation {
+    void* collisionTarget;
+    enum ColliderType collisionType;
+    struct Vector3 position;
+    struct Vector3 normal;
+};
+
+enum ColliderMoveResult {
+    ColliderMoveResultSameFace,
+    ColliderMoveResultHitEdge,
+};
+
+#endif

@@ -10,6 +10,8 @@
 #include "src/level/test/header.h"
 #include "src/system/align.h"
 #include "src/player/cameraman.h"
+#include "src/player/geo/header.h"
+#include "src/system/assert.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -22,7 +24,9 @@
 u64 dram_stack[SP_DRAM_STACK_SIZE64];
 u64 rdp_output[RDP_OUTPUT_LEN];
 
-Gfx globalDL[1024];
+#define GLOBAL_DL_SIZE      1024
+
+Gfx globalDL[GLOBAL_DL_SIZE];
 
 static OSTask taskHeader = {
     M_GFXTASK,
@@ -66,9 +70,10 @@ static float theta;
 Mtx projection;
 Mtx modeling;
 Mtx worldScale;
+Mtx playerMtx;
 u16 perspectiveCorrect;
 
-struct Vector3 target = {0.0f, 2.0f, 0.0f};
+struct Vector3 target = {0.0f, 0.0f, 0.0f};
 
 extern u16 zbuffer[];
 
@@ -92,10 +97,16 @@ Gfx* clear(u16* cfb) {
 
     guMtxCatL(&rotate, &cameraView, &modeling);
 
-    osWritebackDCache(&projection, sizeof(Mtx));
-    osWritebackDCache(&modeling, sizeof(Mtx));
 
     guScale(&worldScale, 1.0f / 256.0f, 1.0f / 256.0f, 1.0f / 256.0f);
+
+    guTranslate(&rotate, target.x, target.y, target.z);
+    guMtxCatL(&worldScale, &rotate, &playerMtx);
+
+    osWritebackDCache(&projection, sizeof(Mtx));
+    osWritebackDCache(&modeling, sizeof(Mtx));
+    osWritebackDCache(&worldScale, sizeof(Mtx));
+    osWritebackDCache(&playerMtx, sizeof(Mtx));
 
     u16* color = cfb;
     u16* zbuf = (u16*)ALIGN_64_BYTES((u32)zbuffer);
@@ -104,6 +115,7 @@ Gfx* clear(u16* cfb) {
 
     Gfx* dl = globalDL;
     gSPSegment(dl++, 0, 0x0);
+    gSPSegment(dl++, 8, 0x0);
     gDPSetScissor(dl++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WD, SCREEN_HT);
 
     gDPSetCycleType(dl++, G_CYC_FILL);
@@ -150,12 +162,22 @@ Gfx* clear(u16* cfb) {
     gSPPerspNormalize(dl++, perspectiveCorrect);
     gDPPipeSync(dl++);
 
+    test_CollisionTest_vtx[0].force_structure_alignment = 0;
+
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&worldScale), G_MTX_MODELVIEW|G_MTX_MUL|G_MTX_PUSH);
-    gSPDisplayList(dl++, test_TestLayout_mesh);
+    gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_TestLayout_mesh));
+    gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_CollisionTest_dl));
+    gSPPopMatrix(dl++, G_MTX_MODELVIEW);
+
+    gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&playerMtx), G_MTX_MODELVIEW|G_MTX_MUL|G_MTX_PUSH);
+    gSPDisplayList(dl++, geo_Player_mesh);
     gSPPopMatrix(dl++, G_MTX_MODELVIEW);
 
 	gDPFullSync(dl++);
 	gSPEndDisplayList(dl++);
+
+    assert(dl - globalDL <= GLOBAL_DL_SIZE);
+
     return dl;
 }
 
