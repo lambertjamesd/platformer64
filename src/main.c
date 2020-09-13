@@ -134,7 +134,6 @@ public	void	mainproc(void *arg)
   osViBlack(0);
   n_WaitMesg(retrace);
   initcontroller();
-  initRenderScene();
 
 #if USE_DEBUGGER
 
@@ -154,6 +153,7 @@ public	void	mainproc(void *arg)
   }
 #endif
 
+  initRenderScene();
   println("Start polling");
   int healthcheck = 0;
 

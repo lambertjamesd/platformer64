@@ -99,6 +99,18 @@ struct Vector3 gDebugMeshData[] = {
 
 Vtx gDebugVertices[32];
 
+void checkIsTouching(struct CollisionMesh* mesh, struct Vector3* pos, float radius, float innerHeight, char* isTouchingOut) {
+    int i;
+
+    for (i = 0; i < mesh->faceCount; ++i) {
+        struct Vector3 baryCoords;
+        struct Vector3 projectedPoint;
+        planeProjectOnto(&mesh->faces[i].plane, pos, &projectedPoint);
+        collisionFaceBaryCoord(&mesh->faces[i], &projectedPoint, &baryCoords);
+        isTouchingOut[i] = baryCoords.x >= 0 && baryCoords.y >= 0 &&  baryCoords.z >= 0;
+    }
+}
+
 Gfx* renderDebugCollision(Gfx* dl, struct CollisionMesh* mesh, char* isTouching) {
     int vertexIndex = 0;
 
@@ -233,8 +245,7 @@ Gfx* clear(u16* cfb) {
     gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_TestLayout_mesh));
     // gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_CollisionTest_dl));
 
-    isTouching[0] = 0;
-    isTouching[0] = 1;
+    checkIsTouching(&gDebugMesh, &target, 0.25f, 0.5f, isTouching);
     dl = renderDebugCollision(dl, &gDebugMesh, isTouching);
 
     gSPPopMatrix(dl++, G_MTX_MODELVIEW);
@@ -283,5 +294,5 @@ void renderScene(u16* cfb) {
 void initRenderScene() {
     gCameraMan.camera.rotation.w = 1.0f;
 
-    collisionFillDebugShape(&gDebugMesh, gDebugMeshData, 6);
+    collisionFillDebugShape(&gDebugMesh, gDebugMeshData, sizeof(gDebugMeshData) / sizeof(struct Vector3));
 }

@@ -26,8 +26,8 @@ void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, stru
     vector3Sub(in, face->edges[0]->endpoints[face->edgeIndices[0]], &pointOffset);
 
     float d01 = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
-    float d20 = vector3Dot(face->edges[0]->endpoints[face->edgeIndices[0]], &pointOffset);
-    float d21 = vector3Dot(face->edges[1]->endpoints[face->edgeIndices[1]], &pointOffset);
+    float d20 = vector3Dot(&face->edgeDir[0], &pointOffset);
+    float d21 = vector3Dot(&face->edgeDir[1], &pointOffset);
 
     baryCoord->y = (vector3Dot(&face->edgeDir[1], &face->edgeDir[1]) * d20 - d01 * d21) * face->barycentricDenom;
     baryCoord->z = (vector3Dot(&face->edgeDir[0], &face->edgeDir[0]) * d21 - d01 * d20) * face->barycentricDenom;
@@ -85,7 +85,7 @@ void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from,
         float edgeDot = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
 
         face->barycentricDenom = 1.0f / (
-            vector3MagSqrd(&face->edgeDir[0]) * vector3MagSqrd(&face->edgeDir[1]) +
+            vector3MagSqrd(&face->edgeDir[0]) * vector3MagSqrd(&face->edgeDir[1]) -
             edgeDot * edgeDot
         );
 

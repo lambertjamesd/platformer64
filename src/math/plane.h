@@ -12,5 +12,7 @@ struct Plane {
 };
 
 void planeFromNormalPoint(struct Vector3* normal, struct Vector3* point, struct Plane* out);
+void planeProjectOnto(struct Plane* plane, struct Vector3* point, struct Vector3* out);
+float planeDistanceFromPoint(struct Plane* plane, struct Vector3* point);
 
 #endif
