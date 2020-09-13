@@ -39,6 +39,7 @@ CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/asci.c \
 	src/render.c \
 	src/collision/collisionmesh.c \
+	src/collision/meshcapsulecollision.c \
 	src/math/vector.c \
 	src/math/quaternion.c \
 	src/math/fastsqrt.c \

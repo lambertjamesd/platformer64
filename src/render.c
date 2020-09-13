@@ -13,6 +13,7 @@
 #include "src/player/geo/header.h"
 #include "src/system/assert.h"
 #include "src/collision/collisionmesh.h"
+#include "src/collision/meshcapsulecollision.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -88,13 +89,13 @@ struct CollisionMesh gDebugMesh = {
 };
 
 struct Vector3 gDebugMeshData[] = {
-    {-1.0f, 1.0f, -1.0f},
-    {1.0f, 1.0f, -1.0f},
-    {1.0f, 1.0f, 1.0f},
+    {-1.0f, 0.5f, -1.0f},
+    {1.0f, 0.5f, 1.0f},
+    {1.0f, 0.5f, -1.0f},
 
-    {1.0f, 1.0f, 1.0f},
-    {-1.0f, 1.0f, 1.0f},
-    {-1.0f, 1.0f, -1.0f},
+    {1.0f, 0.5f, 1.0f},
+    {-1.0f, 0.5f, -1.0f},
+    {-1.0f, 0.0f, 1.0f},
 };
 
 Vtx gDebugVertices[32];
@@ -179,7 +180,26 @@ Gfx* clear(u16* cfb) {
 
     guScale(&worldScale, 1.0f / 256.0f, 1.0f / 256.0f, 1.0f / 256.0f);
 
-    guTranslate(&rotate, target.x, target.y, target.z);
+    struct Vector3 movedTarget;
+    struct ContactPoint contactPoint;
+    struct CollisionCapsule capsule;
+
+    capsule.center = target;
+    capsule.center.y += 0.5f;
+    capsule.innerHeight = 0.5f;
+    capsule.radius = 0.25f;
+
+    int index;
+
+    for (index = 0; index < gDebugMesh.faceCount; ++index) {
+        if (meshFaceCapsuleContactPoint(&gDebugMesh.faces[index], &capsule, &contactPoint)) {
+            capsule.center.x += contactPoint.normal.x * contactPoint.overlapDistance;
+            capsule.center.y += contactPoint.normal.y * contactPoint.overlapDistance;
+            capsule.center.z += contactPoint.normal.z * contactPoint.overlapDistance;
+        }
+    }
+
+    guTranslate(&rotate, capsule.center.x, capsule.center.y - 0.5f, capsule.center.z);
     guMtxCatL(&worldScale, &rotate, &playerMtx);
 
     osWritebackDCache(&projection, sizeof(Mtx));
@@ -232,8 +252,8 @@ Gfx* clear(u16* cfb) {
     gDPPipeSync(dl++);
 
     gSPViewport(dl++, &vp);
-    gSPClearGeometryMode(dl++, G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_CULL_FRONT | G_CULL_BACK | G_FOG | G_LIGHTING | G_SHADE);
-    gSPSetGeometryMode(dl++, G_ZBUFFER | G_SHADING_SMOOTH);
+    gSPClearGeometryMode(dl++, G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_CULL_FRONT | G_FOG | G_LIGHTING | G_SHADE);
+    gSPSetGeometryMode(dl++, G_ZBUFFER | G_SHADING_SMOOTH | G_CULL_BACK);
     gSPTexture(dl++, 0, 0, 0, 0, G_OFF);
 
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&projection), G_MTX_PROJECTION|G_MTX_LOAD|G_MTX_NOPUSH);
