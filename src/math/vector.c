@@ -35,13 +35,23 @@ void vector3Normalize(struct Vector3* in, struct Vector3* out) {
     vector3Scale(in, out, invSqrt);
 }
 
-float vector3Dot(struct Vector3* a, struct Vector3* b) {
-    return a->x * b->x + a->y * b->y + a->z * b->z;
-}
-
 void vector3Lerp(struct Vector3* a, struct Vector3* b, float t, struct Vector3* out) {
     float tFlip = 1.0f - t;
     out->x = a->x * tFlip + b->x * t;
     out->y = a->y * tFlip + b->y * t;
     out->z = a->z * tFlip + b->z * t;
+}
+
+float vector3Dot(struct Vector3* a, struct Vector3* b) {
+    return a->x * b->x + a->y * b->y + a->z * b->z;
+}
+
+float vector3MagSqrd(struct Vector3* a) {
+    return a->x * a->x + a->y * a->y + a->z * a->z;
+}
+
+void vector3Cross(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
+    out->x = a->y * b->z - a->z * b->y;
+    out->y = a->z * b->x - a->x * b->z;
+    out->z = a->x * b->y - a->y * b->x;
 }

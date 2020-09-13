@@ -11,8 +11,8 @@ struct CollisionFace;
 
 struct CollisionFace {
     struct CollisionEdge* edges[3];
-    struct Plane edgeTangents[3];
-    u8 edgeIndices[3];
+    unsigned char edgeIndices[3];
+    unsigned char unused;
     struct Plane plane;
     struct Vector3 edgeDir[2];
     float barycentricDenom;
@@ -20,20 +20,22 @@ struct CollisionFace {
 
 struct CollisionEdge {
     struct CollisionFace* faces[2];
-    u16 edgeIndex[2];
+    unsigned short edgeIndex[2];
     struct Vector3* endpoints[2];
 };
 
 struct CollisionMesh {
-    struct CollisionEdge* edges;
-    u32 edgeCount;
     struct CollisionFace* faces;
-    u32 faceCount;
+    struct CollisionEdge* edges;
+    unsigned short faceCount;
+    unsigned short edgeCount;
 };
 
 void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, struct Vector3* baryCoord);
 void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* baryCoord, struct Vector3* out);
 
 void collisionMoveSphereOverMesh(struct CollisionLocation* location, struct Vector3* dir);
+
+void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount);
 
 #endif

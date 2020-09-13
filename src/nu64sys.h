@@ -12,7 +12,7 @@
 #define	public
 #define	private	static
 
-#define SCREEN_LOW	0
+#define SCREEN_LOW	1
 #define SCREEN_HIGH	!SCREEN_LOW
 
 #if	SCREEN_LOW

@@ -128,7 +128,6 @@ public	void	mainproc(void *arg)
   cfb_tbl[1] = (u16*)OS_PHYSICAL_TO_K0(osMemSize - sizeof(u16) * SCREEN_WD * SCREEN_HT);
   cfb_tbl[0] = cfb_tbl[1] - sizeof(u16) * SCREEN_WD * SCREEN_HT;
 
-  osViSetMode(&osViModeTable[OS_VI_NTSC_HPF1]);
   osViBlack(1);
   osViSwapBuffer( cfb_tbl[frame] );
   

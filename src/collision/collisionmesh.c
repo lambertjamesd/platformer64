@@ -1,7 +1,7 @@
 
 #include "collisionmesh.h"
 #include "src/math/vector.h"
-
+#include "src/system/assert.h"
 
 // // Compute barycentric coordinates (u, v, w) for
 // // point p with respect to triangle (a, b, c)
@@ -55,4 +55,56 @@ void collisionMoveSphereOverMesh(struct CollisionLocation* location, struct Vect
         case ColliderTypeMeshEdgeEnd1:
             break;
     };
+}
+
+void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount) {
+    int i;
+    int faceIndex = 0;
+
+    target->edgeCount = fromCount;
+    target->faceCount = fromCount / 3;
+
+    for (i = 0; i < fromCount; i += 3) {
+        struct Vector3* v0 = &from[i + 0];
+        struct Vector3* v1 = &from[i + 1];
+        struct Vector3* v2 = &from[i + 2];
+        
+        struct CollisionFace* face = &target->faces[faceIndex];
+
+        face->edges[0] = &target->edges[i + 0];
+        face->edges[1] = &target->edges[i + 1];
+        face->edges[2] = &target->edges[i + 2];
+
+        face->edgeIndices[0] = 0;
+        face->edgeIndices[1] = 0;
+        face->edgeIndices[2] = 0;
+
+        vector3Sub(v1, v0, &face->edgeDir[0]);
+        vector3Sub(v2, v0, &face->edgeDir[1]);
+
+        float edgeDot = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
+
+        face->barycentricDenom = 1.0f / (
+            vector3MagSqrd(&face->edgeDir[0]) * vector3MagSqrd(&face->edgeDir[1]) +
+            edgeDot * edgeDot
+        );
+
+        struct Vector3 normal;
+        vector3Cross(&face->edgeDir[0], &face->edgeDir[1], &normal);
+        vector3Normalize(&normal, &normal);
+        planeFromNormalPoint(&normal, v0, &face->plane);
+
+        int edge;
+
+        for (edge = 0; edge < 3; ++edge) { 
+            face->edges[edge]->faces[0] = face;
+            face->edges[edge]->faces[1] = 0;
+            face->edges[edge]->edgeIndex[0] = edge;
+            face->edges[edge]->edgeIndex[1] = 0;
+            face->edges[edge]->endpoints[0] = &from[i + edge];
+            face->edges[edge]->endpoints[1] = &from[i + (edge + 1) % 3];
+        }
+
+        faceIndex++;
+    }
 }

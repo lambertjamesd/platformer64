@@ -12,6 +12,7 @@
 #include "src/player/cameraman.h"
 #include "src/player/geo/header.h"
 #include "src/system/assert.h"
+#include "src/collision/collisionmesh.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -77,6 +78,71 @@ struct Vector3 target = {0.0f, 0.0f, 0.0f};
 
 extern u16 zbuffer[];
 
+struct CollisionFace gDebugFaces[10];
+struct CollisionEdge gDebugEdges[30];
+struct CollisionMesh gDebugMesh = {
+    gDebugFaces,
+    gDebugEdges,
+    0,
+    0,
+};
+
+struct Vector3 gDebugMeshData[] = {
+    {-1.0f, 1.0f, -1.0f},
+    {1.0f, 1.0f, -1.0f},
+    {1.0f, 1.0f, 1.0f},
+
+    {1.0f, 1.0f, 1.0f},
+    {-1.0f, 1.0f, 1.0f},
+    {-1.0f, 1.0f, -1.0f},
+};
+
+Vtx gDebugVertices[32];
+
+Gfx* renderDebugCollision(Gfx* dl, struct CollisionMesh* mesh, char* isTouching) {
+    int vertexIndex = 0;
+
+    gDPPipeSync(dl++);
+    gDPSetCycleType(dl++, G_CYC_1CYCLE);
+    gDPSetRenderMode(dl++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+    gDPSetCombineMode(dl++, G_CC_ADDRGB, G_CC_PRIMITIVE);
+    gSPSetGeometryMode(dl++, G_SHADE | G_SHADING_SMOOTH);
+
+    int i;
+    int edge;
+    int pass;
+
+    for (pass = 0; pass < 2; ++pass) {
+        if (pass == 0) {
+            gDPSetPrimColor(dl++, 0, 0, 0xff, 0, 0, 0xff);
+        } else {
+            gDPSetPrimColor(dl++, 0, 0, 0, 0xff, 0, 0xff);
+        }
+
+        gDPPipeSync(dl++);
+
+        for (i = 0; i < mesh->faceCount; ++i) {
+            if (isTouching[i] == pass) {
+                struct CollisionFace* face = &mesh->faces[i];
+                gSPVertex(dl++, &gDebugVertices[vertexIndex], 3, 0);
+                for (edge = 0; edge < 3; ++edge) {
+                    struct Vector3* point = face->edges[edge]->endpoints[0];
+                    gDebugVertices[vertexIndex].v.ob[0] = (short)(point->x * 256.0f);
+                    gDebugVertices[vertexIndex].v.ob[1] = (short)(point->y * 256.0f);
+                    gDebugVertices[vertexIndex].v.ob[2] = (short)(point->z * 256.0f);
+                    gDebugVertices[vertexIndex].v.cn[3] = 0xff;
+                    ++vertexIndex;
+                }
+                gSP1Triangle(dl++, 0, 1, 2, 0);
+            }
+        }
+    }
+
+    osWritebackDCache(gDebugVertices, sizeof(gDebugVertices));
+
+    return dl;
+}
+
 Gfx* clear(u16* cfb) {
     guPerspective(&projection, &perspectiveCorrect, 70.0f, 4.0f / 3.0f, 1.0f, 128.0f, 1.0f);
     Mtx cameraView;
@@ -86,6 +152,7 @@ Gfx* clear(u16* cfb) {
     struct Vector3 offset;
 
     float fMtx[4][4];
+    char isTouching[32];
 
     cameraCalcView(&gCameraMan.camera, fMtx);
     guMtxF2L(fMtx, &cameraView);
@@ -162,11 +229,14 @@ Gfx* clear(u16* cfb) {
     gSPPerspNormalize(dl++, perspectiveCorrect);
     gDPPipeSync(dl++);
 
-    test_CollisionTest_vtx[0].force_structure_alignment = 0;
-
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&worldScale), G_MTX_MODELVIEW|G_MTX_MUL|G_MTX_PUSH);
     gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_TestLayout_mesh));
-    gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_CollisionTest_dl));
+    // gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_CollisionTest_dl));
+
+    isTouching[0] = 0;
+    isTouching[0] = 1;
+    dl = renderDebugCollision(dl, &gDebugMesh, isTouching);
+
     gSPPopMatrix(dl++, G_MTX_MODELVIEW);
 
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&playerMtx), G_MTX_MODELVIEW|G_MTX_MUL|G_MTX_PUSH);
@@ -212,4 +282,6 @@ void renderScene(u16* cfb) {
 
 void initRenderScene() {
     gCameraMan.camera.rotation.w = 1.0f;
+
+    collisionFillDebugShape(&gDebugMesh, gDebugMeshData, 6);
 }

@@ -18,6 +18,7 @@ Gfx test_CollisionTest_dl[] = {
 	gsSPVertex(test_CollisionTest_vtx, 4, 0),
     gsSP1Triangle(0, 1, 2, 0),
     gsDPSetPrimColor(0, 0, 0, 0xff, 0, 0xff),
+    gsDPPipeSync(),
     gsSP1Triangle(0, 2, 3, 0),
     gsSPEndDisplayList(),
 };
