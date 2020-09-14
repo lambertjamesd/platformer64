@@ -11,13 +11,6 @@ enum ColliderType {
     ColliderTypeMeshEdgeEnd1,
 };
 
-struct CollisionLocation {
-    void* collisionTarget;
-    enum ColliderType collisionType;
-    struct Vector3 position;
-    struct Vector3 normal;
-};
-
 enum ColliderMoveResult {
     ColliderMoveResultSameFace,
     ColliderMoveResultHitEdge,

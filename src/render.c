@@ -183,6 +183,7 @@ Gfx* clear(u16* cfb) {
     struct Vector3 movedTarget;
     struct ContactPoint contactPoint;
     struct CollisionCapsule capsule;
+    struct Vector3 baryCoords;
 
     capsule.center = target;
     capsule.center.y += 0.5f;
@@ -192,7 +193,7 @@ Gfx* clear(u16* cfb) {
     int index;
 
     for (index = 0; index < gDebugMesh.faceCount; ++index) {
-        if (meshFaceCapsuleContactPoint(&gDebugMesh.faces[index], &capsule, &contactPoint)) {
+        if (meshFaceCapsuleContactPoint(&gDebugMesh.faces[index], &capsule, &contactPoint, &baryCoords)) {
             capsule.center.x += contactPoint.normal.x * contactPoint.overlapDistance;
             capsule.center.y += contactPoint.normal.y * contactPoint.overlapDistance;
             capsule.center.z += contactPoint.normal.z * contactPoint.overlapDistance;

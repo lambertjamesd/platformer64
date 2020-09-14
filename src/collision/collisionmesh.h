@@ -4,7 +4,6 @@
 
 #include "src/math/plane.h"
 #include "src/math/vector.h"
-#include "collider.h"
 
 struct CollisionEdge;
 struct CollisionFace;
@@ -33,8 +32,6 @@ struct CollisionMesh {
 
 void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, struct Vector3* baryCoord);
 void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* baryCoord, struct Vector3* out);
-
-void collisionMoveSphereOverMesh(struct CollisionLocation* location, struct Vector3* dir);
 
 void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount);
 

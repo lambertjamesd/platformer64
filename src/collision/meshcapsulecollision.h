@@ -6,6 +6,15 @@
 #include "collisioncapusle.h"
 #include "contactpoint.h"
 
-int meshFaceCapsuleContactPoint(struct CollisionFace* face, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint);
+enum MeshCollisionResult {
+    MeshCollisionResultNone,
+    MeshCollisionResultPlane,
+    MeshCollisionResultTriangle,
+    MeshCollisionResultLineEnd0,
+    MeshCollisionResultLineEnd1,
+    MeshCollisionResultLineSegment,
+};
+
+enum MeshCollisionResult meshFaceCapsuleContactPoint(struct CollisionFace* face, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint, struct Vector3* baryCoord);
 
 #endif

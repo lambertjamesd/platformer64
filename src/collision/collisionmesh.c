@@ -44,19 +44,6 @@ void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* bary
     out->z = baryCoord->x * a->z + baryCoord->y * b->z + baryCoord->z * c->z;
 }
 
-void collisionMoveSphereOverMesh(struct CollisionLocation* location, struct Vector3* dir) {
-    switch (location->collisionType) {
-        case ColliderTypeMeshFace:
-            break;
-        case ColliderTypeMeshEdge:
-            break;
-        case ColliderTypeMeshEdgeEnd0:
-            break;
-        case ColliderTypeMeshEdgeEnd1:
-            break;
-    };
-}
-
 void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount) {
     int i;
     int faceIndex = 0;
