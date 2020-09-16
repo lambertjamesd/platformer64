@@ -50,6 +50,14 @@ float vector3MagSqrd(struct Vector3* a) {
     return a->x * a->x + a->y * a->y + a->z * a->z;
 }
 
+float vector3DistSqrd(struct Vector3* a, struct Vector3* b) {
+    float x = a->x - b->x;
+    float y = a->y - b->y;
+    float z = a->z - b->z;
+
+    return x * x + y * y + z * z;
+}
+
 void vector3Cross(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
     out->x = a->y * b->z - a->z * b->y;
     out->y = a->z * b->x - a->x * b->z;

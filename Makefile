@@ -44,6 +44,7 @@ CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/math/quaternion.c \
 	src/math/fastsqrt.c \
 	src/math/plane.c \
+	src/math/ray.c \
 	src/render/sceneview.c \
 	src/render/scenerender.c \
 	src/system/fastalloc.c \
