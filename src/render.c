@@ -192,12 +192,10 @@ Gfx* clear(u16* cfb) {
 
     int index;
 
-    for (index = 0; index < gDebugMesh.faceCount; ++index) {
-        if (meshFaceCapsuleContactPoint(&gDebugMesh.faces[index], &capsule, &contactPoint, &baryCoords)) {
-            capsule.center.x += contactPoint.normal.x * contactPoint.overlapDistance;
-            capsule.center.y += contactPoint.normal.y * contactPoint.overlapDistance;
-            capsule.center.z += contactPoint.normal.z * contactPoint.overlapDistance;
-        }
+    if (meshEdgeCapsuleContactPoint(&gDebugMesh.edges[0], &capsule, &contactPoint) == MeshCollisionResultLineSegment) {
+        capsule.center.x += contactPoint.normal.x * contactPoint.overlapDistance;
+        capsule.center.y += contactPoint.normal.y * contactPoint.overlapDistance;
+        capsule.center.z += contactPoint.normal.z * contactPoint.overlapDistance;
     }
 
     guTranslate(&rotate, capsule.center.x, capsule.center.y - 0.5f, capsule.center.z);

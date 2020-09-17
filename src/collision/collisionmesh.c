@@ -93,5 +93,8 @@ void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from,
         }
 
         faceIndex++;
+
+        target->vertices = from;
+        target->vertexCount = fromCount;
     }
 }

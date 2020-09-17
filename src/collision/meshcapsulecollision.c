@@ -109,7 +109,7 @@ enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge,
             return meshEdgeSphereConcatPoint(edge, &referencePoint, capsule->radius, contactPoint);
         }
     } else {
-        vector3Sub(edge->endpoints[0], &capsule->center, &originOffset);
+        vector3Sub(&capsule->center, edge->endpoints[0] , &originOffset);
         float partialEdgeDot = edgeDir.x * originOffset.x + edgeDir.z * originOffset.z;
 
         float capsuleLerp = 
@@ -121,7 +121,7 @@ enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge,
 
         capsuleLerp *= denom;
 
-        if (capsuleLerp < capsule->innerHeight * 0.5f) {
+        if (capsuleLerp > capsule->innerHeight * 0.5f) {
             originOffset = capsule->center;
             originOffset.y += capsule->innerHeight * 0.5f;
             return meshEdgeSphereConcatPoint(edge, &originOffset, capsule->radius, contactPoint);
@@ -166,6 +166,36 @@ enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge,
             }
         }
     }
+}
+
+int meshPointSphereContactPoint(struct Vector3* point, struct Vector3* origin, float radius, struct ContactPoint* contactPoint) {
+    struct Vector3 offset;
+
+    vector3Sub(origin, point, &offset);
+
+    float dist = vector3MagSqrd(&offset);
+
+    if (dist > radius * radius) {
+        return 0;
+    }
+
+    vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(dist));
+    contactPoint->contact = *point;
+    contactPoint->overlapDistance = radius - vector3Dot(&offset, &contactPoint->normal);
+    contactPoint->target = point;
+    contactPoint->type = ColliderTypePoint;
+}
+
+int meshPointCapsuleContactPoint(struct Vector3* point, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint) {
+    struct Vector3 capsulePoint = capsule->center;
+
+    if (point->y > capsulePoint.y + capsule->innerHeight * 0.5f) {
+        capsulePoint.y += capsule->innerHeight * 0.5f;
+    } else if (point->y < capsulePoint.y - capsule->innerHeight * 0.5f) {
+        capsulePoint.y -= capsule->innerHeight * 0.5f;
+    }
+
+    return meshPointSphereContactPoint(point, &capsulePoint, capsule->radius, contactPoint);
 }
 
 int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint) {

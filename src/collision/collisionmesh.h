@@ -26,8 +26,10 @@ struct CollisionEdge {
 struct CollisionMesh {
     struct CollisionFace* faces;
     struct CollisionEdge* edges;
+    struct Vector3* vertices;
     unsigned short faceCount;
     unsigned short edgeCount;
+    unsigned short vertexCount;
 };
 
 void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, struct Vector3* baryCoord);

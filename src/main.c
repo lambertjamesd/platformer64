@@ -19,7 +19,7 @@ u16	*cfb_tbl[2];
 #define NUM_LINES 24
 #define NUM_COLS  70
 
-#define USE_DEBUGGER  0
+#define USE_DEBUGGER  1
 
 char textGrid[NUM_LINES][NUM_COLS + 1];
 u8 nextLineIndex;

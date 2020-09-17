@@ -9,6 +9,7 @@ enum ColliderType {
     ColliderTypeMeshEdge,
     ColliderTypeMeshEdgeEnd0,
     ColliderTypeMeshEdgeEnd1,
+    ColliderTypePoint,
 };
 
 enum ColliderMoveResult {
