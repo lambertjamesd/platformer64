@@ -7,6 +7,8 @@
 #include "src/system/fastalloc.h"
 #include "src/math/fastsqrt.h"
 
+#define OVERLAP_TOLERANCE   0.00001f
+
 enum MeshCollisionResult meshFaceCapsuleContactPoint(struct CollisionFace* face, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint, struct Vector3* baryCoord) {
     struct Vector3 center = capsule->center;
 
@@ -70,16 +72,24 @@ enum MeshCollisionResult meshEdgeSphereConcatPoint(struct CollisionEdge* edge, s
 
     vector3Sub(pos, &contactPoint->contact, &offset);
 
-    float magSqrd = vector3MagSqrd(&offset) > radius * radius;
+    float magSqrd = vector3MagSqrd(&offset);
 
-    if (magSqrd) {
+    if (magSqrd > radius * radius) {
         return MeshCollisionResultNone;
+    } else if (magSqrd < OVERLAP_TOLERANCE) {
+        struct Plane* plane = &edge->faces[0]->plane;
+        contactPoint->normal.x = plane->a;
+        contactPoint->normal.y = plane->b;
+        contactPoint->normal.z = plane->c;
+        contactPoint->overlapDistance = radius;
+        contactPoint->target = edge;
+        contactPoint->type = ColliderTypeMeshEdge;
+    } else {
+        vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(magSqrd));
+        contactPoint->overlapDistance = radius - vector3Dot(&offset, &contactPoint->normal);
+        contactPoint->target = edge;
+        contactPoint->type = ColliderTypeMeshEdge;
     }
-
-    vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(magSqrd));
-    contactPoint->overlapDistance = radius - vector3Dot(&offset, &contactPoint->normal);
-    contactPoint->target = edge;
-    contactPoint->type = ColliderTypeMeshEdge;
 }
 
 enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint) {
@@ -90,7 +100,7 @@ enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge,
 
     float denom = edgeDir.x * edgeDir.x + edgeDir.z * edgeDir.z;
 
-    if (fabs(denom) < 0.00001f) {
+    if (denom < OVERLAP_TOLERANCE) {
         int minIndex = edge->endpoints[1]->y < edge->endpoints[0]->y;
 
         if (edge->endpoints[minIndex]->y > capsule->center.y + capsule->innerHeight * 0.5f) {
@@ -155,20 +165,31 @@ enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge,
 
                 if (distSqrd > capsule->radius * capsule->radius) {
                     return MeshCollisionResultNone;
+                } else if (distSqrd < OVERLAP_TOLERANCE) {
+                    struct Plane* facePlane = &edge[0].faces[0]->plane;
+                    contactPoint->normal.x = facePlane->a;
+                    contactPoint->normal.y = facePlane->b;
+                    contactPoint->normal.z = facePlane->c;
+
+                    contactPoint->overlapDistance = capsule->radius;
+                    contactPoint->target = edge;
+                    contactPoint->type = ColliderTypeMeshEdge;
+
+                    return MeshCollisionResultLineSegment;
+                } else {
+                    vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(distSqrd));
+                    contactPoint->overlapDistance = capsule->radius - vector3Dot(&offset, &contactPoint->normal);
+                    contactPoint->target = edge;
+                    contactPoint->type = ColliderTypeMeshEdge;
+
+                    return MeshCollisionResultLineSegment;
                 }
-
-                vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(distSqrd));
-                contactPoint->overlapDistance = capsule->radius - vector3Dot(&offset, &contactPoint->normal);
-                contactPoint->target = edge;
-                contactPoint->type = ColliderTypeMeshEdge;
-
-                return MeshCollisionResultLineSegment;
             }
         }
     }
 }
 
-int meshPointSphereContactPoint(struct Vector3* point, struct Vector3* origin, float radius, struct ContactPoint* contactPoint) {
+enum MeshCollisionResult meshPointSphereContactPoint(struct Vector3* point, struct Vector3* origin, float radius, struct ContactPoint* contactPoint) {
     struct Vector3 offset;
 
     vector3Sub(origin, point, &offset);
@@ -176,17 +197,26 @@ int meshPointSphereContactPoint(struct Vector3* point, struct Vector3* origin, f
     float dist = vector3MagSqrd(&offset);
 
     if (dist > radius * radius) {
-        return 0;
-    }
+        return MeshCollisionResultNone;
+    } else if (dist < OVERLAP_TOLERANCE) {
+        contactPoint->contact = *point;
+        contactPoint->overlapDistance = radius;
+        contactPoint->target = point;
+        contactPoint->type = ColliderTypePoint;
 
-    vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(dist));
-    contactPoint->contact = *point;
-    contactPoint->overlapDistance = radius - vector3Dot(&offset, &contactPoint->normal);
-    contactPoint->target = point;
-    contactPoint->type = ColliderTypePoint;
+        return MeshCollisionResultDirectOverlap;
+    } else {
+        vector3Scale(&offset, &contactPoint->normal, fastInvSqrt(dist));
+        contactPoint->contact = *point;
+        contactPoint->overlapDistance = radius - vector3Dot(&offset, &contactPoint->normal);
+        contactPoint->target = point;
+        contactPoint->type = ColliderTypePoint;
+
+        return MeshCollisionResultPoint;
+    }
 }
 
-int meshPointCapsuleContactPoint(struct Vector3* point, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint) {
+enum MeshCollisionResult meshPointCapsuleContactPoint(struct Vector3* point, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint) {
     struct Vector3 capsulePoint = capsule->center;
 
     if (point->y > capsulePoint.y + capsule->innerHeight * 0.5f) {
@@ -258,6 +288,29 @@ int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule*
                 pointArraySize += 2;
             }
             edges[pointCount++] = (struct CollisionEdge*)((u32)edges[i] | 0x1);
+        }
+    }
+
+    for (i = 0; i < pointCount; ++i) {
+        struct CollisionEdge* edge = (struct CollisionEdge*)((u32)edges[i] & ~0x1);
+        int pointIndex = (u32)edges[i] & 0x1;
+        enum MeshCollisionResult result = meshPointCapsuleContactPoint(edge->endpoints[pointIndex], capsule, contactPoint);
+
+        if (result == MeshCollisionResultPoint) {
+            restoreFastAllocState(prevState);
+            contactPoint->type = ColliderTypeMeshEdgeEnd0 + pointIndex;
+            contactPoint->target = edge;
+            return 1;
+        } else if (result == MeshCollisionResultDirectOverlap) {
+            contactPoint->normal.x = edge->faces[0]->plane.a;
+            contactPoint->normal.y = edge->faces[0]->plane.b;
+            contactPoint->normal.z = edge->faces[0]->plane.c;
+            
+            contactPoint->type = ColliderTypeMeshEdgeEnd0 + pointIndex;
+            contactPoint->target = edge;
+
+            restoreFastAllocState(prevState);
+            return 1;
         }
     }
 

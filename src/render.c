@@ -192,7 +192,7 @@ Gfx* clear(u16* cfb) {
 
     int index;
 
-    if (meshEdgeCapsuleContactPoint(&gDebugMesh.edges[0], &capsule, &contactPoint) == MeshCollisionResultLineSegment) {
+    if (meshCapsuleContactPoint(&gDebugMesh, &capsule, &contactPoint)) {
         capsule.center.x += contactPoint.normal.x * contactPoint.overlapDistance;
         capsule.center.y += contactPoint.normal.y * contactPoint.overlapDistance;
         capsule.center.z += contactPoint.normal.z * contactPoint.overlapDistance;

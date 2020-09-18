@@ -13,11 +13,13 @@ enum MeshCollisionResult {
     MeshCollisionResultLineEnd0,
     MeshCollisionResultLineEnd1,
     MeshCollisionResultLineSegment,
+    MeshCollisionResultPoint,
+    MeshCollisionResultDirectOverlap,
 };
 
 enum MeshCollisionResult meshFaceCapsuleContactPoint(struct CollisionFace* face, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint, struct Vector3* baryCoord);
 int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint);
-int meshPointCapsuleContactPoint(struct Vector3* point, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint);
+enum MeshCollisionResult meshPointCapsuleContactPoint(struct Vector3* point, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint);
 enum MeshCollisionResult meshEdgeCapsuleContactPoint(struct CollisionEdge* edge, struct CollisionCapsule* capsule, struct ContactPoint* contactPoint);
 
 #endif

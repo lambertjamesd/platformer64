@@ -20,6 +20,10 @@ void* fastalloc(int size) {
 }
 
 AllocState getFastAllocState() {
+    if (currentFastAlloc == 0) {
+        currentFastAlloc = fastAllocBuffer;
+    }
+    
     return currentFastAlloc;
 }
 
