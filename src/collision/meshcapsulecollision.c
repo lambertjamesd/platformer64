@@ -42,9 +42,9 @@ enum MeshCollisionResult meshFaceCapsuleContactPoint(struct CollisionFace* face,
     contactPoint->normal.y = face->plane.b;
     contactPoint->normal.z = face->plane.c;
 
-    contactPoint->contact.x = center.x + face->plane.a * overlapDistance;
-    contactPoint->contact.y = center.y + face->plane.b * overlapDistance;
-    contactPoint->contact.z = center.z + face->plane.c * overlapDistance;
+    contactPoint->contact.x = center.x - face->plane.a * overlapDistance;
+    contactPoint->contact.y = center.y - face->plane.b * overlapDistance;
+    contactPoint->contact.z = center.z - face->plane.c * overlapDistance;
     contactPoint->target = face;
     contactPoint->type = ColliderTypeMeshFace;
 
@@ -237,13 +237,17 @@ int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule*
     int edgeCount = 0;
     int edgeArraySize = 0;
 
+    contactPoint->target = NULL;
+
     for (i = 0; i < mesh->faceCount; ++i) {
         struct CollisionFace* face = &mesh->faces[i];
         struct Vector3 baryCoord;
-        enum MeshCollisionResult result = meshFaceCapsuleContactPoint(face, capsule, contactPoint, &baryCoord);
+        struct ContactPoint check;
+        enum MeshCollisionResult result = meshFaceCapsuleContactPoint(face, capsule, &check, &baryCoord);
         if (result == MeshCollisionResultTriangle) {
-            restoreFastAllocState(prevState);
-            return 1;
+            if (contactPoint->target == NULL || check.overlapDistance < contactPoint->overlapDistance) {
+                *contactPoint = check;
+            }
         } else if (result == MeshCollisionResultPlane) {
             if (edgeCount == edgeArraySize) {
                 // allocate 2 slots since fast alloc aligns to 8 bytes
@@ -265,15 +269,24 @@ int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule*
         }
     }
 
+    if (contactPoint->target != NULL) {
+        restoreFastAllocState(prevState);
+        return 1;
+    }
+
+    return 0;
+
     int pointCount = 0;
     int pointArraySize = 0;
 
     for (i = 0; i < edgeCount; ++i) {
-        enum MeshCollisionResult result = meshEdgeCapsuleContactPoint(edges[i], capsule, contactPoint);
+        struct ContactPoint check;
+        enum MeshCollisionResult result = meshEdgeCapsuleContactPoint(edges[i], capsule, &check);
 
         if (result == MeshCollisionResultLineSegment) {
-            restoreFastAllocState(prevState);
-            return 1;
+            if (contactPoint->target == NULL || check.overlapDistance < contactPoint->overlapDistance) {
+                *contactPoint = check;
+            }
         } else if (result == MeshCollisionResultLineEnd0) {
             if (pointCount == pointArraySize) {
                 // allocate 2 slots since fast alloc aligns to 8 bytes
@@ -291,6 +304,11 @@ int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule*
         }
     }
 
+    if (contactPoint->target != NULL) {
+        restoreFastAllocState(prevState);
+        return 1;
+    }
+
     for (i = 0; i < pointCount; ++i) {
         struct CollisionEdge* edge = (struct CollisionEdge*)((u32)edges[i] & ~0x1);
         int pointIndex = (u32)edges[i] & 0x1;
@@ -305,7 +323,7 @@ int meshCapsuleContactPoint(struct CollisionMesh* mesh, struct CollisionCapsule*
             contactPoint->normal.x = edge->faces[0]->plane.a;
             contactPoint->normal.y = edge->faces[0]->plane.b;
             contactPoint->normal.z = edge->faces[0]->plane.c;
-            
+
             contactPoint->type = ColliderTypeMeshEdgeEnd0 + pointIndex;
             contactPoint->target = edge;
 

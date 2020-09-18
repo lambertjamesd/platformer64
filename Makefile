@@ -51,7 +51,8 @@ CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/system/assert.c \
 	src/player/playerrender.c \
 	src/player/geo/geo.c \
-	src/player/cameraman.c
+	src/player/cameraman.c \
+	src/player/player.c
 
 CODEOBJECTS =	$(CODEFILES:.c=.o)
 

@@ -63,3 +63,10 @@ void vector3Cross(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
     out->y = a->z * b->x - a->x * b->z;
     out->z = a->x * b->y - a->y * b->x;
 }
+
+void vector3Project(struct Vector3* in, struct Vector3* normal, struct Vector3* out) {
+    float mag = vector3Dot(in, normal);
+    out->x = normal->x * mag;
+    out->y = normal->y * mag;
+    out->z = normal->z * mag;
+}

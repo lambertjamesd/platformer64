@@ -14,6 +14,7 @@
 #include "src/system/assert.h"
 #include "src/collision/collisionmesh.h"
 #include "src/collision/meshcapsulecollision.h"
+#include "src/player/player.h"
 
 #define SP_UCODE_SIZE		4096
 #define SP_UCODE_DATA_SIZE	2048
@@ -75,8 +76,6 @@ Mtx worldScale;
 Mtx playerMtx;
 u16 perspectiveCorrect;
 
-struct Vector3 target = {0.0f, 0.0f, 0.0f};
-
 extern u16 zbuffer[];
 
 struct CollisionFace gDebugFaces[10];
@@ -89,13 +88,33 @@ struct CollisionMesh gDebugMesh = {
 };
 
 struct Vector3 gDebugMeshData[] = {
-    {-1.0f, 0.5f, -1.0f},
-    {1.0f, 0.5f, 1.0f},
-    {1.0f, 0.5f, -1.0f},
+    {-5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {-5.0f, 0.0f, -5.0f},
+    {-5.0f, 0.0f, 5.0f},
 
-    {1.0f, 0.5f, 1.0f},
-    {-1.0f, 0.5f, -1.0f},
-    {-1.0f, 0.0f, 1.0f},
+    {-5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {-5.0f, 0.5f, -10.0f},
+    {5.0f, 0.5f, -10.0f},
+    {-5.0f, 0.5f, -10.0f},
+    {5.0f, 0.0f, -5.0f},
+
+    {5.0f, 1.0f, -5.0f},
+    {15.0f, 1.0f, 5.0f},
+    {15.0f, 1.0f, -5.0f},
+    {15.0f, 1.0f, 5.0f},
+    {5.0f, 1.0f, -5.0f},
+    {5.0f, 1.0f, 5.0f},
+
+    {5.0f, 1.0f, -5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {5.0f, 1.0f, 5.0f},
+    {5.0f, 1.0f, -5.0f},
 };
 
 Vtx gDebugVertices[32];
@@ -185,7 +204,12 @@ Gfx* clear(u16* cfb) {
     struct CollisionCapsule capsule;
     struct Vector3 baryCoords;
 
-    capsule.center = target;
+    struct Vector3 moveOffset;
+
+    vector3Scale(&gPlayer.velocity, &moveOffset, 1.0f / 30.0f);
+    vector3Add(&gPlayer.position, &moveOffset, &gPlayer.position);
+
+    capsule.center = gPlayer.position;
     capsule.center.y += 0.5f;
     capsule.innerHeight = 0.5f;
     capsule.radius = 0.25f;
@@ -196,6 +220,13 @@ Gfx* clear(u16* cfb) {
         capsule.center.x += contactPoint.normal.x * contactPoint.overlapDistance;
         capsule.center.y += contactPoint.normal.y * contactPoint.overlapDistance;
         capsule.center.z += contactPoint.normal.z * contactPoint.overlapDistance;
+
+        struct Vector3 projectedVel;
+        vector3Project(&gPlayer.velocity, &contactPoint.normal, &projectedVel);
+        vector3Sub(&gPlayer.velocity, &projectedVel, &gPlayer.velocity);
+
+        gPlayer.position = capsule.center;
+        gPlayer.position.y -= 0.5f;
     }
 
     guTranslate(&rotate, capsule.center.x, capsule.center.y - 0.5f, capsule.center.z);
@@ -261,10 +292,10 @@ Gfx* clear(u16* cfb) {
     gDPPipeSync(dl++);
 
     gSPMatrix(dl++, OS_K0_TO_PHYSICAL(&worldScale), G_MTX_MODELVIEW|G_MTX_MUL|G_MTX_PUSH);
-    gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_TestLayout_mesh));
+    // gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_TestLayout_mesh));
     // gSPDisplayList(dl++, OS_K0_TO_PHYSICAL(test_CollisionTest_dl));
 
-    checkIsTouching(&gDebugMesh, &target, 0.25f, 0.5f, isTouching);
+    checkIsTouching(&gDebugMesh, &gPlayer.position, 0.25f, 0.5f, isTouching);
     dl = renderDebugCollision(dl, &gDebugMesh, isTouching);
 
     gSPPopMatrix(dl++, G_MTX_MODELVIEW);
@@ -282,7 +313,7 @@ Gfx* clear(u16* cfb) {
 }
 
 void renderScene(u16* cfb) {
-    cameraManUpdate(&gCameraMan, &target);
+    cameraManUpdate(&gCameraMan, &gPlayer.position);
 
     OSMesg dummyMessage;
     OSTask *task = &taskHeader;

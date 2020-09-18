@@ -13,13 +13,14 @@
 #include  "render.h"
 #include  "src/render/sceneview.h"
 #include  "src/player/cameraman.h"
+#include  "src/player/player.h"
 
 u16	*cfb_tbl[2];
 
 #define NUM_LINES 24
 #define NUM_COLS  70
 
-#define USE_DEBUGGER  1
+#define USE_DEBUGGER  0
 
 char textGrid[NUM_LINES][NUM_COLS + 1];
 u8 nextLineIndex;
@@ -42,8 +43,6 @@ static u32 	seed =1;
  */
 extern OSMesgQueue  n_dmaMessageQ;
 OSPiHandle          *handler;
-
-extern struct Vector3 target;
 
 void println(char* text)
 {
@@ -174,28 +173,7 @@ public	void	mainproc(void *arg)
       gCameraMan.camera.rotation = qRotate;
     }
 
-    // quatAxisAngle(&gRight, (float)lasty * 0.0001f, &rotateByFrame);
-    // quatMultiply(&gCameraMan.camera.rotation, &rotateByFrame, &qRotate);
-
-    if (lasty != 0) {
-      struct Vector3 offset;
-      quatMultVector(&gCameraMan.camera.rotation, &gForward, &offset);
-      offset.y = 0.0f;
-      vector3Normalize(&offset, &offset);
-
-      vector3Scale(&offset, &offset, (float)lasty * -0.001f);
-      vector3Add(&target, &offset, &target);
-    }
-
-    if (lastx != 0) {
-      struct Vector3 offset;
-      quatMultVector(&gCameraMan.camera.rotation, &gRight, &offset);
-      offset.y = 0.0f;
-      vector3Normalize(&offset, &offset);
-
-      vector3Scale(&offset, &offset, (float)lastx * 0.001f);
-      vector3Add(&target, &offset, &target);
-    }
+    updatePlayer(&gPlayer, &controllerdata[0], &gCameraMan.camera.rotation, 1.0f / 30.0f);
 
     renderScene( cfb_tbl[frame] );
     frame ^= 1;
