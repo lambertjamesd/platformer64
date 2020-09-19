@@ -13,6 +13,6 @@ struct Player {
 
 extern struct Player gPlayer;
 
-void updatePlayer(struct Player* player, OSContPad* controller, struct Quaternion* cameraRotation, float dt);
+void updatePlayer(struct Player* player, struct Quaternion* cameraRotation, float dt);
 
 #endif
