@@ -8,17 +8,57 @@
 #include  <string.h>
 #include "nu64sys.h"
 #include "thread.h"
-#include "graph.h"
 #include "debugger/debugger.h"
 #include "render.h"
 #include "src/render/sceneview.h"
 #include "src/player/cameraman.h"
 #include "src/player/player.h"
 #include "src/player/controller.h"
+#include "src/system/time.h"
+#include "src/scene/scene.h"
 
 u16	*cfb_tbl[2];
 
-#define USE_DEBUGGER  1
+struct CollisionFace gDebugFaces[10];
+struct CollisionEdge gDebugEdges[30];
+struct CollisionMesh gDebugMesh = {
+    gDebugFaces,
+    gDebugEdges,
+    0,
+    0,
+};
+
+struct Vector3 gDebugMeshData[] = {
+    {-5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {-5.0f, 0.0f, -5.0f},
+    {-5.0f, 0.0f, 5.0f},
+
+    {-5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {-5.0f, 0.5f, -10.0f},
+    {5.0f, 0.5f, -10.0f},
+    {-5.0f, 0.5f, -10.0f},
+    {5.0f, 0.0f, -5.0f},
+
+    {5.0f, 1.0f, -5.0f},
+    {15.0f, 1.0f, 5.0f},
+    {15.0f, 1.0f, -5.0f},
+    {15.0f, 1.0f, 5.0f},
+    {5.0f, 1.0f, -5.0f},
+    {5.0f, 1.0f, 5.0f},
+
+    {5.0f, 1.0f, -5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {5.0f, 0.0f, 5.0f},
+    {5.0f, 1.0f, 5.0f},
+    {5.0f, 1.0f, -5.0f},
+};
+
+#define USE_DEBUGGER  0
 
 /*
  *  Handler
@@ -58,9 +98,13 @@ public	void	mainproc(void *arg)
 
   contInit();
   initRenderScene();
+  collisionFillDebugShape(&gDebugMesh, gDebugMeshData, sizeof(gDebugMeshData) / sizeof(struct Vector3));
+
+  gScene.staticCollision = &gDebugMesh;
 
   while(1) {
     contReadData();
+    timeUpdate();
 
     struct Quaternion qRotate;
     struct Quaternion rotateByFrame;
@@ -71,7 +115,7 @@ public	void	mainproc(void *arg)
       gCameraMan.camera.rotation = qRotate;
     }
 
-    updatePlayer(&gPlayer, &gCameraMan.camera.rotation, 1.0f / 30.0f);
+    updatePlayer(&gPlayer);
 
     renderScene( cfb_tbl[frame] );
     frame ^= 1;

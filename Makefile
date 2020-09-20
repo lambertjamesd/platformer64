@@ -23,7 +23,7 @@ TARGETS =	platformer.n64
 DEBUGGERHFILES = debugger/serial.h \
 	debugger/debugger.h
 
-HFILES =	$(DEBUGGERHFILES) src/graph.h \
+HFILES =	$(DEBUGGERHFILES) \
 	src/nu64sys.h \
 	src/thread.h \
 	src/render.h
@@ -34,26 +34,27 @@ DEBUGGERFILES = debugger/serial.c \
 	debugger/debugger.c
 
 CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
-	src/main.c \
-	src/graph.c \
-	src/asci.c \
-	src/render.c \
 	src/collision/collisionmesh.c \
 	src/collision/meshcapsulecollision.c \
-	src/math/vector.c \
-	src/math/quaternion.c \
+	src/collision/meshslide.c \
+	src/main.c \
 	src/math/fastsqrt.c \
 	src/math/plane.c \
+	src/math/quaternion.c \
 	src/math/ray.c \
-	src/render/sceneview.c \
-	src/render/scenerender.c \
-	src/system/fastalloc.c \
-	src/system/assert.c \
-	src/player/playerrender.c \
-	src/player/geo/geo.c \
+	src/math/vector.c \
 	src/player/cameraman.c \
+	src/player/controller.c \
+	src/player/geo/geo.c \
 	src/player/player.c \
-	src/player/controller.c
+	src/player/playerrender.c \
+	src/render.c \
+	src/render/scenerender.c \
+	src/render/sceneview.c \
+	src/scene/scene.c \
+	src/system/assert.c \
+	src/system/fastalloc.c \
+	src/system/time.c
 
 CODEOBJECTS =	$(CODEFILES:.c=.o)
 

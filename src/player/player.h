@@ -6,13 +6,18 @@
 #include "src/math/vector.h"
 #include "src/math/quaternion.h"
 
+struct Player;
+
+typedef void (*PlayerState)(struct Player* player);
+
 struct Player {
+    PlayerState currentState;
     struct Vector3 position;
     struct Vector3 velocity;
 };
 
 extern struct Player gPlayer;
 
-void updatePlayer(struct Player* player, struct Quaternion* cameraRotation, float dt);
+void updatePlayer(struct Player* player);
 
 #endif
