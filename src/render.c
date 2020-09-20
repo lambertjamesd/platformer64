@@ -51,20 +51,6 @@ static OSTask taskHeader = {
 	0			/* yield buffer length */
 };
 
-static Vtx vertices[] = {
-    { -640, -64,  640, 0, 0, 0, 0, 0xff, 0, 0xff	},
-    { 640, -64,  640, 0, 0, 0, 0, 0, 0, 0xff	},
-    { 640, -64, -640, 0, 0, 0, 0, 0, 0xff, 0xff	},
-    { -640, -64, -640, 0, 0, 0, 0xff, 0, 0, 0xff	},
-};
-
-static Vtx tex_vtx[] =  {
-    { -64,  64, -5, 0, (0 << 6), (0 << 6), 0xff, 0xff, 0xff, 0xff},
-    {  64,  64, -5, 0, (4 << 6), (0 << 6), 0xff, 0xff, 0xff, 0xff},
-    {  64, -64, -5, 0, (4 << 6), (4 << 6), 0xff, 0xff, 0xff, 0xff},
-    { -64, -64, -5, 0, (0 << 6), (4 << 6), 0xff, 0xff, 0xff, 0xff},
-};
-
 static Vp vp = {
 	SCREEN_WD*2, SCREEN_HT*2, G_MAXZ/2, 0,	/* scale */
 	SCREEN_WD*2, SCREEN_HT*2, G_MAXZ/2, 0,	/* translate */
