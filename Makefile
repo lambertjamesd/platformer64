@@ -36,6 +36,7 @@ DEBUGGERFILES = debugger/serial.c \
 CODEFILES   = src/zbuffer.c $(DEBUGGERFILES) $(LEVEL_TEST_FILES) src/nu64sys.c \
 	src/collision/collisionmesh.c \
 	src/collision/meshcapsulecollision.c \
+	src/collision/meshraycast.c \
 	src/collision/meshslide.c \
 	src/main.c \
 	src/math/fastsqrt.c \

@@ -8,7 +8,13 @@
  * ax + by + cz + d = 0
  */
 struct Plane {
-    float a, b, c, d;
+    union {
+        struct {
+            float a, b, c;
+        };
+        struct Vector3 normal;
+    };
+    float d;
 };
 
 void planeFromNormalPoint(struct Vector3* normal, struct Vector3* point, struct Plane* out);
