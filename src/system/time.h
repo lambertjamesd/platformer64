@@ -3,6 +3,7 @@
 #define _SYSTEM_TIME_H
 
 extern float gTimeDelta;
+extern float gInvTimeDelta;
 
 void timeUpdate();
 

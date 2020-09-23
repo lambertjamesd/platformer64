@@ -30,8 +30,6 @@ float spherecastPlane(struct Vector3* origin, struct Vector3* dir, struct Plane*
 float spherecastFace(struct Vector3* origin, struct Vector3* dir, struct CollisionFace* face, float radius, struct ContactPoint* contact) {
     struct Vector3 normal;
     struct Vector3 faceOffset;
-    vector3Sub(dir, )
-    vector3Cross(dir, )
 
     return RAYCAST_NO_HIT;
 }
@@ -81,12 +79,12 @@ float spherecastLineOverlap(struct Vector3* origin, struct Vector3* dir, struct 
             ) / yzDenom;
         }
 
-        vector3Scale(&edgeDir, *edgeLerp, contact->contact);
-        vector3Add(edge->endpoints[0], &edgeDir, contact->contact);
+        vector3Scale(&edgeDir, &contact->contact, *edgeLerp);
+        vector3Add(edge->endpoints[0], &edgeDir, &contact->contact);
 
         float result = (contact->contact.x - origin->x) * dir->x + 
             (contact->contact.y - origin->y) * dir->y + 
-            (contact->contac.z - origin->z) * dir->z;
+            (contact->contact.z - origin->z) * dir->z;
             
         contact->overlapDistance = overlapOffset;
 

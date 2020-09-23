@@ -5,6 +5,7 @@
 #include <ultra64.h>
 #include "src/math/vector.h"
 #include "src/math/quaternion.h"
+#include "src/collision/contactpoint.h"
 
 struct Player;
 
@@ -14,6 +15,7 @@ struct Player {
     PlayerState currentState;
     struct Vector3 position;
     struct Vector3 velocity;
+    struct ContactPoint lastContact;
 };
 
 extern struct Player gPlayer;
