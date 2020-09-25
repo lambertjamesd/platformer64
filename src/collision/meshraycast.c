@@ -24,7 +24,24 @@ float spherecastPlane(struct Vector3* origin, struct Vector3* dir, struct Plane*
     modifiedOrigin.x = origin->y - plane->b * radius;
     modifiedOrigin.x = origin->z - plane->c * radius;
 
-    return raycastPlane(&modifiedOrigin, dir, plane);
+    float denom = vector3Dot(dir, &plane->normal);
+    float originDistance = vector3Dot(&modifiedOrigin, &plane->normal) + plane->d;
+
+    if (denom > -0.0001f) {
+        if (fabs(originDistance) <= radius) {
+            return RAYCAST_FULL_OVERLAP;
+        } else {
+            return RAYCAST_NO_HIT;
+        }
+    }
+    
+    float result = -originDistance / denom;
+
+    if (result >= 0.0f) {
+        return result;
+    } else {
+        return RAYCAST_NO_HIT;
+    }
 }
 
 float spherecastFace(struct Vector3* origin, struct Vector3* dir, struct CollisionFace* face, float radius, struct ContactPoint* contact) {
@@ -35,59 +52,67 @@ float spherecastFace(struct Vector3* origin, struct Vector3* dir, struct Collisi
 }
 
 float spherecastLineOverlap(struct Vector3* origin, struct Vector3* dir, struct CollisionEdge* edge, float radius, struct ContactPoint* contact, float* edgeLerp) {
-    struct Vector3 edgeDir;
-    struct Vector3 originOffset;
-    struct Vector3 normal;
-    vector3Sub(edge->endpoints[1], edge->endpoints[0], &edgeDir);
-    vector3Cross(dir, &edgeDir, &normal);
-    vector3Sub(edge->endpoints[0], origin, &originOffset);
+    struct Vector3 edgeOffset;
+    struct Vector3 dirDiff;
+    struct Vector3 originDiff;
+    vector3Sub(edge->endpoints[1], edge->endpoints[0], &edgeOffset);
 
-    float normalDistSqrd = vector3MagSqrd(&normal);
+    float dirDot = vector3Dot(&edgeOffset, dir);
 
-    if (fabs(normalDistSqrd) < 0.000001f) {
-        vector3Project(&originOffset, dir, &edgeDir);
-        vector3Add(edge->endpoints[0], &edgeDir, &edgeDir);
-        if (vector3DistSqrd(&edgeDir, edge->endpoints[0]) <= radius * radius) {
-            contact->contact = edgeDir;
+    float edgeLenSq = 1.0f / vector3MagSqrd(&edgeOffset);
+    vector3Scale(&edgeOffset, &dirDiff, dirDot * edgeLenSq);
+    vector3Sub(dir, &dirDiff, &dirDiff);
+
+    float dirDiffMagSq = vector3MagSqrd(&dirDiff);
+    float rSqrd = radius * radius;
+
+    vector3Scale(&edgeOffset, &originDiff, vector3Dot(&edgeOffset, origin) * edgeLenSq);
+    vector3Sub(origin, &originDiff, &originDiff);
+
+    // check if ray and edge are in the same direction
+    if (dirDiffMagSq < 0.00001f) {
+        // line is fully enclosed by spherecast
+        if (vector3MagSqrd(&originDiff) < rSqrd) {
+            *edgeLerp = dirDot;
             return RAYCAST_FULL_OVERLAP;
         } else {
             return RAYCAST_NO_HIT;
         }
-    } else {
-        struct Vector3 lineOffset;
-        vector3Scale(&normal, &lineOffset, vector3Dot(&normal, &originOffset) / normalDistSqrd);
-
-        normalDistSqrd = vector3MagSqrd(&lineOffset);
-        float overlapOffset = radius * radius - normalDistSqrd;
-
-        if (overlapOffset < 0.0f) {
-            return RAYCAST_NO_HIT;
-        }
-
-        float xyDenom = dir->x * edgeDir.y - dir->y * edgeDir.x;
-        float yzDenom = dir->y * edgeDir.z - dir->z * edgeDir.y;
-
-        if (xyDenom > yzDenom) {
-            *edgeLerp = (
-                dir->y * (originOffset.x - lineOffset.x) - 
-                dir->x * (originOffset.y - lineOffset.y)
-            ) / xyDenom;
-        } else {
-            *edgeLerp = (
-                dir->z * (originOffset.y - lineOffset.y) - 
-                dir->y * (originOffset.z - lineOffset.z)
-            ) / yzDenom;
-        }
-
-        vector3Scale(&edgeDir, &contact->contact, *edgeLerp);
-        vector3Add(edge->endpoints[0], &edgeDir, &contact->contact);
-
-        float result = (contact->contact.x - origin->x) * dir->x + 
-            (contact->contact.y - origin->y) * dir->y + 
-            (contact->contact.z - origin->z) * dir->z;
-            
-        contact->overlapDistance = overlapOffset;
-
-        return result;
     }
+
+    float originDiffMagSq = vector3MagSqrd(&originDiff);
+    float edgeDot = vector3Dot(&dirDiff, &originDiff);
+
+    float overlapCheck = edgeDot * edgeDot - dirDiffMagSq * (originDiffMagSq - rSqrd);
+
+    // ray and line don't get close enough to intersect
+    if (overlapCheck < 0.0f) {
+        return RAYCAST_NO_HIT;
+    }
+
+    // check if line is behind ray
+    if (edgeDot > 0.0f) {
+        return RAYCAST_NO_HIT;
+    }
+
+    float result = (-edgeDot - sqrtf(overlapCheck)) /  dirDiffMagSq;
+
+    contact->target = edge;
+    contact->type = ColliderTypeMeshEdge;
+    
+    struct Vector3 posAtContact;
+
+    posAtContact.x = origin->x + dir->x * result;
+    posAtContact.y = origin->y + dir->y * result;
+    posAtContact.z = origin->z + dir->z * result;
+
+    *edgeLerp = vector3Dot(&edgeOffset, &contact->contact) * edgeLenSq;
+
+    vector3Sub(&posAtContact, edge->endpoints[0], &contact->contact);
+    vector3Scale(&edgeOffset, &contact->contact, *edgeLerp);
+    vector3Add(&contact->contact, edge->endpoints[0], &contact->contact);
+    vector3Sub(&posAtContact, &contact->contact, &contact->normal);
+    contact->overlapDistance = 0.0f;
+
+    return result;
 }

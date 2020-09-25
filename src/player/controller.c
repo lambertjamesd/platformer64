@@ -9,7 +9,7 @@ OSContPad gControllerState[MAXCONTROLLERS];
 u16 gControllerLastButton[MAXCONTROLLERS];
 
 void contInit() {
-    u8          pattern;
+    u8 pattern;
     osCreateMesgQueue(&gContMessageQ, &gDummyMessage, 1);
     osSetEventMesg(OS_EVENT_SI, &gContMessageQ, (OSMesg) 0);
 
