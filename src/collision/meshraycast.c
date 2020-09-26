@@ -116,3 +116,7 @@ float spherecastLineOverlap(struct Vector3* origin, struct Vector3* dir, struct 
 
     return result;
 }
+
+float spherecastPoint(struct Vector3* origin, struct Vector3* dir, struct Vector3* point, float radius, struct ContactPoint* contact) {
+    return RAYCAST_NO_HIT;
+}

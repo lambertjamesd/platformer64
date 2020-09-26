@@ -41,6 +41,42 @@ void slideStateQueueEdge(struct SlideRaycastState* state, struct CollisionEdge* 
     }
 }
 
+float slideSpherecastEdges(struct Vector3* origin, struct Vector3* dir, float radius, struct SlideRaycastState* castState, struct ContactPoint* contact) {
+    int pointCheckIndex = 0;
+    int edgeIndex;
+    for (edgeIndex = 0; edgeIndex < castState->edgesToCheckCount; ++edgeIndex) {
+        float edgeLerp;
+        float result = spherecastLineOverlap(origin, dir, castState->edgesToCheck[edgeIndex], radius, contact, &edgeLerp);
+
+        if (result > -ZERO_LIKE_TOLERANCE && result != RAYCAST_NO_HIT) {
+            if (edgeLerp < 0.0f) {
+                castState->edgesToCheck[++pointCheckIndex] = castState->edgesToCheck[edgeIndex];
+            } else if (edgeLerp > 1.0f) {
+                castState->edgesToCheck[++pointCheckIndex] = (struct CollisionEdge*)((int)castState->edgesToCheck[edgeIndex] | 0x1);
+            } else {
+                castState->target = castState->edgesToCheck[edgeIndex];
+                castState->targetType = ColliderTypeMeshEdge;
+                return result;
+            }
+        }
+    }
+
+    for (edgeIndex = 0; edgeIndex < pointCheckIndex; ++edgeIndex) {
+        struct CollisionEdge* edge = (struct CollisionEdge*)((int)castState->edgesToCheck[edgeIndex] & ~0x1);
+        int pointIndex = (int)castState->edgesToCheck[edgeIndex] & 0x1;
+
+        float result = spherecastPoint(origin, dir, edge->endpoints[pointIndex], radius, contact);
+
+        if (result > -ZERO_LIKE_TOLERANCE && result != RAYCAST_NO_HIT) {
+            castState->target = edge;
+            castState->targetType = ColliderTypeMeshEdgeEnd0 + pointIndex;
+            return result;
+        }
+    }
+
+    return RAYCAST_NO_HIT;
+}
+
 float slideSpherecastFaces(struct Vector3* origin, struct Vector3* dir, float radius, struct SlideRaycastState* castState, struct CollisionFace* checkFace) {
     if (!slideStateHasFace(castState, checkFace)) {
         slideStateMarkFace(castState, checkFace);
@@ -130,13 +166,21 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
         }
     }
 
+    struct ContactPoint edgeCheck;
+    float edgeHit = slideSpherecastEdges(&sliderCenter, dir, sliderRadius, &raycastState, &edgeCheck);
+
+    if (edgeHit >= -ZERO_LIKE_TOLERANCE && edgeHit < moveDistance) {
+        nextContact = edgeCheck;
+        moveDistance = edgeHit;
+    }
+
     struct SlideResult result;
     result.type = (point->target == nextContact.target) ? SlideResultComplete : SlideResultNewContact;
     result.moveDistance = moveDistance;
 
     struct Vector3 newPos;
     vector3Scale(dir, &nextContact.contact, moveDistance);
-    vector3Add(&nextContact.contact, &newPos, &nextContact.contact);
+    vector3Add(&nextContact.contact, &newPos, &point->contact);
 
     point->target = nextContact.target;
     point->type = nextContact.type;

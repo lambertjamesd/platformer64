@@ -23,10 +23,7 @@ struct SlideRaycastState {
     void* target;
     enum ColliderType targetType;
     struct CollisionFace* checkedFaces[MAX_FACE_CHECK];
-    union {
-        struct CollisionEdge* edgesToCheck[MAX_EDGE_CHECK];
-        struct Vector3* pointsToCheck[MAX_EDGE_CHECK];
-    };
+    struct CollisionEdge* edgesToCheck[MAX_EDGE_CHECK];
     unsigned short checkedFaceCount;
     unsigned short edgesToCheckCount;
     unsigned short pointsToCheckCount;

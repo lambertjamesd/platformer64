@@ -16,5 +16,6 @@ float spherecastPlane(struct Vector3* origin, struct Vector3* dir, struct Plane*
 float spherecastFace(struct Vector3* origin, struct Vector3* dir, struct CollisionFace* face, float radius, struct ContactPoint* contact);
 float spherecastLineOverlap(struct Vector3* origin, struct Vector3* dir, struct CollisionEdge* edge, float radius, struct ContactPoint* contact, float* edgeLerp);
 float spherecastEdge(struct Vector3* origin, struct Vector3* dir, struct CollisionEdge* edge, float radius, struct ContactPoint* contact);
+float spherecastPoint(struct Vector3* origin, struct Vector3* dir, struct Vector3* point, float radius, struct ContactPoint* contact);
 
 #endif
