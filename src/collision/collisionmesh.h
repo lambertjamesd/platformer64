@@ -37,4 +37,7 @@ void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* bary
 
 void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount);
 
+int vertexIndexToEdgeIndex(int vertexIndex);
+struct CollisionFace* collisionGetAdjacentFace(struct CollisionFace* face, int edgeIndex);
+
 #endif

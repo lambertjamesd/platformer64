@@ -2,57 +2,71 @@
 #include <math.h>
 #include "meshslide.h"
 #include "collisionmesh.h"
+#include "meshraycast.h"
+#include "src/math/ray.h"
 
 #define ZERO_LIKE_TOLERANCE 0.000001f
 
+#define TIME_TILL_BARY_EDGE(baryCoord, vel) (fabs(vel) < ZERO_LIKE_TOLERANCE ? -1.0f : (-baryCoord / vel))
+
 struct SlideResult slideContactPointFace(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
     struct Vector3 projectedPoint;
-    struct Vector3 baryCoord;
+    struct Vector3 dirBary;
+    struct Vector3 startingPointBary;
+    struct Vector3 sliderCenter;
     struct CollisionFace* face = point->target;
-    vector3Scale(dir, &projectedPoint, distance);
-    vector3Add(&point->contact, &projectedPoint, &projectedPoint);
-    planeProjectOnto(&face->plane, &projectedPoint, &projectedPoint);
 
-    collisionFaceBaryCoord(face, &projectedPoint, &baryCoord);
+    struct ContactPoint nextContact = *point;
+    int i;
 
-    if (baryCoord.x > 0.0f && baryCoord.y > 0.0f && baryCoord.z > 0.0f) {
-        struct SlideResult result;
-        point->contact = projectedPoint;
-        result.type = SlideResultComplete;
-        result.moveDistance = distance;
-        return result;
+    planeProjectOnto(&face->plane, dir, &projectedPoint);
+    collisionFaceBaryCoord(face, &projectedPoint, &dirBary);
+
+    collisionFaceBaryCoord(face, &point->contact, &startingPointBary);
+
+    float moveDistance = distance;
+
+    vector3Scale(&point->normal, &sliderCenter, sliderRadius);
+    vector3Add(&sliderCenter, &point->contact, &sliderCenter);
+
+    for (i = 0; i < 3; ++i) {
+        if (dirBary.el[i] < 0.0f) {
+            int edgeIndex = vertexIndexToEdgeIndex(i);
+            struct CollisionFace* otherFace = collisionGetAdjacentFace(face, edgeIndex);
+            float hitDistance;
+            if (
+                otherFace && 
+                (hitDistance = spherecastPlane(&sliderCenter, dir, &otherFace->plane, sliderRadius)) >= -ZERO_LIKE_TOLERANCE &&
+                hitDistance < moveDistance) {
+                struct Vector3 otherBaryCoord;
+                struct Vector3 centerAtHit;
+                rayPointAtDistance(&sliderCenter, dir, hitDistance, &centerAtHit);
+                collisionFaceBaryCoord(otherFace, &centerAtHit, &otherBaryCoord);
+
+            } else {
+                float timeTillEdge = TIME_TILL_BARY_EDGE(startingPointBary.el[i], dirBary.el[i]);
+
+                if (timeTillEdge >= -ZERO_LIKE_TOLERANCE && timeTillEdge < moveDistance) {
+                    nextContact.target = face->edges[edgeIndex];
+                    nextContact.type = ColliderTypeMeshEdge;
+                    moveDistance = timeTillEdge;
+                }
+            }
+        }
     }
-
-    struct Vector3 startingPoint;
-
-    collisionFaceBaryCoord(face, &point->contact, &startingPoint);
-
-    struct Vector3 offset;
-
-    vector3Sub(&baryCoord, &startingPoint, &offset);
-
-    float edgeTime = fabs(offset.x) < ZERO_LIKE_TOLERANCE ? 10.0f : -startingPoint.x / offset.x;
-    int edgeIndex = 1;
-
-    float edgeCheck = fabs(offset.y) < ZERO_LIKE_TOLERANCE ? 10.0f : -startingPoint.y / offset.y;
-
-    if (edgeCheck < edgeTime) {
-        edgeTime = edgeTime;
-        edgeIndex = 2;
-    }
-
-    edgeCheck = fabs(offset.z) < ZERO_LIKE_TOLERANCE ? 10.0f : -startingPoint.z / offset.z;
-
-    if (edgeCheck < edgeTime) {
-        edgeTime = edgeTime;
-        edgeIndex = 0;
-    }
-
-
 
     struct SlideResult result;
-    result.type = SlideResultError;
-    result.moveDistance = 0.0f;
+    result.type = (point->target == nextContact.target) ? SlideResultComplete : SlideResultNewContact;
+    result.moveDistance = moveDistance;
+
+    struct Vector3 newPos;
+    vector3Scale(dir, &nextContact.contact, moveDistance);
+    vector3Add(&nextContact.contact, &newPos, &nextContact.contact);
+
+    point->target = nextContact.target;
+    point->type = nextContact.type;
+    point->normal = nextContact.normal;
+
     return result;
 }
 

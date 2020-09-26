@@ -98,3 +98,15 @@ void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from,
         target->vertexCount = fromCount;
     }
 }
+
+int vertexIndexToEdgeIndex(int vertexIndex) {
+    if (vertexIndex >= 2) {
+        return 0;
+    } else {
+        return vertexIndex + 1;
+    }
+}
+
+struct CollisionFace* collisionGetAdjacentFace(struct CollisionFace* face, int edgeIndex) {
+    return face->edges[edgeIndex]->faces[1 - face->edgeIndices[edgeIndex]];
+}
