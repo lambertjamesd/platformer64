@@ -99,6 +99,7 @@ public	void	mainproc(void *arg)
   contInit();
   initRenderScene();
   collisionFillDebugShape(&gDebugMesh, gDebugMeshData, sizeof(gDebugMeshData) / sizeof(struct Vector3));
+  initPlayer(&gPlayer);
 
   gScene.staticCollision = &gDebugMesh;
 

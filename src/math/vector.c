@@ -70,3 +70,10 @@ void vector3Project(struct Vector3* in, struct Vector3* normal, struct Vector3* 
     out->y = normal->y * mag;
     out->z = normal->z * mag;
 }
+
+void vector3ProjectPlane(struct Vector3* in, struct Vector3* normal, struct Vector3* out) {
+    float mag = vector3Dot(in, normal);
+    out->x = in->x - normal->x * mag;
+    out->y = in->y - normal->y * mag;
+    out->z = in->z - normal->z * mag;
+}

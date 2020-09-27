@@ -1,13 +1,15 @@
 
-#include "player.h"
-#include "controller.h"
 #include "cameraman.h"
-#include "src/scene/scene.h"
+#include "controller.h"
+#include "player.h"
 #include "src/collision/meshcapsulecollision.h"
+#include "src/collision/meshslide.h"
+#include "src/scene/scene.h"
 #include "src/system/time.h"
 
 void updatePlayerFreefall(struct Player* player);
 void updatePlayerJump(struct Player* player);
+void updatePlayerPause(struct Player* player);
 
 #define JUMP_IMPULSE        12.0f
 #define JUMP_ACCEL          20.0f
@@ -15,9 +17,34 @@ void updatePlayerJump(struct Player* player);
 #define JUMP_HOLD_TIME      0.5f
 
 struct Player gPlayer = {
-  updatePlayerFreefall,
-  {0.0f, 10.0f, 0.0f},
+  updatePlayerPause,
+  {-3.0f, 10.0f, 3.0f},
 };
+
+void playerGetSurfaceDirection(struct Player* player, struct Vector3* normal, struct Vector3* out) {
+    if (gControllerState[0].stick_y != 0) {
+        struct Vector3 offset;
+        quatMultVector(&gCameraMan.camera.rotation, &gForward, &offset);
+        vector3ProjectPlane(&offset, normal, &offset);
+        vector3Normalize(&offset, &offset);
+
+        vector3Scale(&offset, out, (float)gControllerState[0].stick_y / -127.0f);
+    } else {
+        out->x = 0.0f;
+        out->y = 0.0f;
+        out->z = 0.0f;
+    }
+
+    if (gControllerState[0].stick_x != 0) {
+        struct Vector3 offset;
+        quatMultVector(&gCameraMan.camera.rotation, &gRight, &offset);
+        vector3ProjectPlane(&offset, normal, &offset);
+        vector3Normalize(&offset, &offset);
+
+        vector3Scale(&offset, &offset, (float)gControllerState[0].stick_x / 127.0f);
+        vector3Add(out, &offset, out);
+    }
+}
 
 void updatePlayerWalk(struct Player* player) {
     if (contGetButtonDown(A_BUTTON, 0)) {
@@ -25,32 +52,31 @@ void updatePlayerWalk(struct Player* player) {
         player->currentState = updatePlayerJump;
     }
 
-    struct Vector3 horzVel = {0.0f, 0.0f, 0.0f};
+    struct Vector3 horzVel;
+    struct Vector3 dir;
+    playerGetSurfaceDirection(player, &player->lastContact.normal, &horzVel);
 
-    if (gControllerState[0].stick_y != 0) {
-        struct Vector3 offset;
-        quatMultVector(&gCameraMan.camera.rotation, &gForward, &offset);
-        offset.y = 0.0f;
-        vector3Normalize(&offset, &offset);
+    player->velocity.x = horzVel.x * 10.0f;
+    player->velocity.z = horzVel.z * 10.0f;
 
-        vector3Scale(&offset, &horzVel, (float)gControllerState[0].stick_y * -0.1f);
+    vector3ProjectPlane(&player->velocity, &player->lastContact.normal, &horzVel);
+
+    float velocitySq = vector3MagSqrd(&horzVel);
+
+    if (velocitySq != 0.0f) {
+        vector3Scale(&horzVel, &dir, 1.0f / sqrtf(velocitySq));
+        
+        struct SlideResult slide = slideContactPoint(
+            &player->lastContact, 
+            0.25f, 
+            &dir, 
+            vector3Dot(&dir, &horzVel) * gTimeDelta
+        );
+        player->position = player->lastContact.contact;
+        if (slide.type == SlideResultComplete) {
+        }
     }
 
-    if (gControllerState[0].stick_x != 0) {
-        struct Vector3 offset;
-        quatMultVector(&gCameraMan.camera.rotation, &gRight, &offset);
-        offset.y = 0.0f;
-        vector3Normalize(&offset, &offset);
-
-        vector3Scale(&offset, &offset, (float)gControllerState[0].stick_x * 0.1f);
-        vector3Add(&horzVel, &offset, &horzVel);
-    }
-
-    player->velocity.x = horzVel.x;
-    player->velocity.z = horzVel.z;
-
-    player->position.x += player->velocity.x * gTimeDelta;
-    player->position.z += player->velocity.z * gTimeDelta;
 }
 
 void updatePlayerFreefall(struct Player* player) {
@@ -93,6 +119,16 @@ void updatePlayerJump(struct Player* player) {
     updatePlayerFreefall(player);
 }
 
+void updatePlayerPause(struct Player* player) {
+    if (contGetButton(A_BUTTON, 0)) {
+        player->currentState = updatePlayerFreefall;
+    }
+}
+
 void updatePlayer(struct Player* player) {
     player->currentState(player);
+}
+
+void initPlayer(struct Player* player) {
+    player->lastContact.normal = gUp;
 }

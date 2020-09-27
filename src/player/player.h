@@ -21,5 +21,6 @@ struct Player {
 extern struct Player gPlayer;
 
 void updatePlayer(struct Player* player);
+void initPlayer(struct Player* player);
 
 #endif

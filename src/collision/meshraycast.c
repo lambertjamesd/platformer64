@@ -118,5 +118,24 @@ float spherecastLineOverlap(struct Vector3* origin, struct Vector3* dir, struct 
 }
 
 float spherecastPoint(struct Vector3* origin, struct Vector3* dir, struct Vector3* point, float radius, struct ContactPoint* contact) {
-    return RAYCAST_NO_HIT;
+    struct Vector3 originOffset;
+    vector3Sub(origin, point, &originOffset);
+
+    float dirdot = vector3Dot(&originOffset, dir);
+
+    if (dirdot > 0.0f) {
+        // the point is behind the ray
+        return RAYCAST_NO_HIT;
+    }
+
+    float offsetMagSqr = vector3MagSqrd(&originOffset);
+
+    float sqrtDenom = dirdot * dirdot - offsetMagSqr - radius - radius;
+
+    if (sqrtDenom >= 0.0f) {
+        return -dirdot - sqrtf(sqrtDenom);
+    } else {
+        return RAYCAST_NO_HIT;
+    }
+    
 }

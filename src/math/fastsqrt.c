@@ -3,7 +3,11 @@
 #include <math.h>
 
 float fastInvSqrt(float number) {
-	return 1.0f / sqrtf(number);
+	if (number == 0.0f) {
+		return 0.0f;
+	} else {
+		return 1.0f / sqrtf(number);
+	}
 		
 	// long i;
 	// float x2, y;

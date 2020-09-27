@@ -178,9 +178,8 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
     result.type = (point->target == nextContact.target) ? SlideResultComplete : SlideResultNewContact;
     result.moveDistance = moveDistance;
 
-    struct Vector3 newPos;
     vector3Scale(dir, &nextContact.contact, moveDistance);
-    vector3Add(&nextContact.contact, &newPos, &point->contact);
+    vector3Add(&nextContact.contact, &point->contact, &point->contact);
 
     point->target = nextContact.target;
     point->type = nextContact.type;
