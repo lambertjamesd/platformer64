@@ -150,15 +150,22 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
     for (pointIndex = 0; pointIndex < 3; ++pointIndex) {
         if (edgeDistance.el[pointIndex] > -ZERO_LIKE_TOLERANCE) {
             int edgeIndex = vertexIndexToEdgeIndex(pointIndex);
-
-            if (edgeDistance.el[pointIndex] < moveDistance) {
-                nextContact.target = face->edges[edgeIndex];
-                nextContact.type = ColliderTypeMeshEdge;
-                moveDistance = edgeDistance.el[pointIndex];
-            }
-
             struct CollisionFace* otherFace = collisionGetAdjacentFace(face, edgeIndex);
             float hitDistance;
+
+            if (edgeDistance.el[pointIndex] < moveDistance) {
+                struct CollisionEdge* edge = face->edges[edgeIndex];
+                moveDistance = edgeDistance.el[pointIndex];
+
+                if (otherFace && vector3Dot(&face->plane.normal, &otherFace->plane.normal) > 0.9999) {
+                    nextContact.target = otherFace;
+                    nextContact.type = ColliderTypeMeshFace;
+                    nextContact.normal = otherFace->plane.normal;
+                } else {
+                    nextContact.target = edge;
+                    nextContact.type = ColliderTypeMeshEdge;
+                }
+            }
 
             if (
                 otherFace && 
