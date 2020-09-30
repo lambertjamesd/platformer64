@@ -5,10 +5,14 @@
 #include "meshraycast.h"
 #include "src/math/ray.h"
 #include "src/system/fastalloc.h"
+#include "debugger/serial.h"
+#include <string.h>
 
 #define ZERO_LIKE_TOLERANCE 0.000001f
 
 #define TIME_TILL_BARY_EDGE(baryCoord, vel) (fabs(vel) < ZERO_LIKE_TOLERANCE ? -1.0f : (-baryCoord / vel))
+
+char gTmpBufferFoo[1000];
 
 int slideStateHasFace(struct SlideRaycastState* state, struct CollisionFace* face) {
     int i;
@@ -115,24 +119,27 @@ float slideSpherecastFaces(struct Vector3* origin, struct Vector3* dir, float ra
 }
 
 struct SlideResult slideContactPointFace(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
-    struct Vector3 projectedPoint;
-    struct Vector3 dirBary;
-    struct Vector3 startingPointBary;
     struct Vector3 sliderCenter;
+    struct Vector3 edgeDistance;
     struct CollisionFace* face = point->target;
 
     struct ContactPoint nextContact = *point;
     int pointIndex;
 
-    planeProjectOnto(&face->plane, dir, &projectedPoint);
-    collisionFaceBaryCoord(face, &projectedPoint, &dirBary);
-
-    collisionFaceBaryCoord(face, &point->contact, &startingPointBary);
-
     float moveDistance = distance;
 
     vector3Scale(&point->normal, &sliderCenter, sliderRadius);
     vector3Add(&sliderCenter, &point->contact, &sliderCenter);
+
+    collisionFaceBaryDistanceToEdge(face, &point->contact, dir, &edgeDistance);
+
+    gdbSendMessage(GDBDataTypeText, gTmpBufferFoo, sprintf(
+        gTmpBufferFoo, 
+        "%d %d %d", 
+        fabs(edgeDistance.x) < 100.0f ? (int)(100 * edgeDistance.x) : 0, 
+        fabs(edgeDistance.y) < 100.0f ? (int)(100 * edgeDistance.y) : 0, 
+        fabs(edgeDistance.z) < 100.0f ? (int)(100 * edgeDistance.z) : 0
+    ));
 
     struct SlideRaycastState raycastState;
     raycastState.checkedFaces[0] = face;
@@ -141,27 +148,27 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
     raycastState.pointsToCheckCount = 0;
 
     for (pointIndex = 0; pointIndex < 3; ++pointIndex) {
-        if (dirBary.el[pointIndex] < 0.0f) {
+        if (edgeDistance.el[pointIndex] > -ZERO_LIKE_TOLERANCE) {
             int edgeIndex = vertexIndexToEdgeIndex(pointIndex);
+
+            if (edgeDistance.el[pointIndex] < moveDistance) {
+                nextContact.target = face->edges[edgeIndex];
+                nextContact.type = ColliderTypeMeshEdge;
+                moveDistance = edgeDistance.el[pointIndex];
+            }
+
             struct CollisionFace* otherFace = collisionGetAdjacentFace(face, edgeIndex);
             float hitDistance;
+
             if (
                 otherFace && 
                 (hitDistance = slideSpherecastFaces(&sliderCenter, dir, sliderRadius, &raycastState, otherFace)) >= -ZERO_LIKE_TOLERANCE &&
                 hitDistance < moveDistance) {
+
                 nextContact.target = raycastState.target;
                 nextContact.type = raycastState.targetType;
                 moveDistance = hitDistance;
-
                 nextContact.normal = ((struct CollisionFace*)raycastState.target)->plane.normal;
-            } else {
-                float timeTillEdge = TIME_TILL_BARY_EDGE(startingPointBary.el[pointIndex], dirBary.el[pointIndex]);
-
-                if (timeTillEdge >= -ZERO_LIKE_TOLERANCE && timeTillEdge < moveDistance) {
-                    nextContact.target = face->edges[edgeIndex];
-                    nextContact.type = ColliderTypeMeshEdge;
-                    moveDistance = timeTillEdge;
-                }
             }
         }
     }

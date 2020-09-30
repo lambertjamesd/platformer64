@@ -2,6 +2,10 @@
 #include "collisionmesh.h"
 #include "src/math/vector.h"
 #include "src/system/assert.h"
+#include <float.h>
+#include <math.h>
+
+#define ZERO_TOLERANCE 0.00001f
 
 // // Compute barycentric coordinates (u, v, w) for
 // // point p with respect to triangle (a, b, c)
@@ -32,6 +36,51 @@ void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, stru
     baryCoord->y = (vector3Dot(&face->edgeDir[1], &face->edgeDir[1]) * d20 - d01 * d21) * face->barycentricDenom;
     baryCoord->z = (vector3Dot(&face->edgeDir[0], &face->edgeDir[0]) * d21 - d01 * d20) * face->barycentricDenom;
     baryCoord->x = 1.0f - baryCoord->y - baryCoord->z;
+}
+
+void collisionFaceBaryDistanceToEdge(struct CollisionFace* face, struct Vector3* origin, struct Vector3* dir, struct Vector3* baryCoord) {
+    struct Vector3 dotCompare0;
+    struct Vector3 dotCompare1;
+    struct Vector3 dotCompare2;
+    struct Vector3 relativeOrigin;
+
+    float edgeDot = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
+    float edge0MagSqr = vector3MagSqrd(&face->edgeDir[0]);
+    float edge1MagSqr = vector3MagSqrd(&face->edgeDir[1]);
+
+    dotCompare1.x = edgeDot * face->edgeDir[1].x - edge1MagSqr * face->edgeDir[0].x;
+    dotCompare1.y = edgeDot * face->edgeDir[1].y - edge1MagSqr * face->edgeDir[0].y;
+    dotCompare1.z = edgeDot * face->edgeDir[1].z - edge1MagSqr * face->edgeDir[0].z;
+
+    dotCompare2.x = edgeDot * face->edgeDir[0].x - edge0MagSqr * face->edgeDir[1].x;
+    dotCompare2.y = edgeDot * face->edgeDir[0].y - edge0MagSqr * face->edgeDir[1].y;
+    dotCompare2.z = edgeDot * face->edgeDir[0].z - edge0MagSqr * face->edgeDir[1].z;
+
+    vector3Add(&dotCompare1, &dotCompare2, &dotCompare0);
+
+    float timeDenom0 = vector3Dot(dir, &dotCompare0);
+    float timeDenom1 = vector3Dot(dir, &dotCompare1);
+    float timeDenom2 = vector3Dot(dir, &dotCompare2);
+
+    vector3Sub(origin, face->edges[0]->endpoints[0], &relativeOrigin);
+
+    if (fabs(timeDenom0) < ZERO_TOLERANCE) {
+        baryCoord->x = FLT_MAX;
+    } else {
+        baryCoord->x = (-vector3Dot(&relativeOrigin, &dotCompare0) - 1.0f / face->barycentricDenom) / timeDenom0;
+    }
+
+    if (fabs(timeDenom1) < ZERO_TOLERANCE) {
+        baryCoord->y = FLT_MAX;
+    } else {
+        baryCoord->y = -vector3Dot(&relativeOrigin, &dotCompare1) / timeDenom1;
+    }
+
+    if (fabs(timeDenom2) < ZERO_TOLERANCE) {
+        baryCoord->z = FLT_MAX;
+    } else {
+        baryCoord->z = -vector3Dot(&relativeOrigin, &dotCompare2) / timeDenom2;
+    }
 }
 
 void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* baryCoord, struct Vector3* out) {

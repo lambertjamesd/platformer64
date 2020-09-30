@@ -34,6 +34,7 @@ struct CollisionMesh {
 
 void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, struct Vector3* baryCoord);
 void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* baryCoord, struct Vector3* out);
+void collisionFaceBaryDistanceToEdge(struct CollisionFace* face, struct Vector3* origin, struct Vector3* dir, struct Vector3* baryCoord);
 
 void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount);
 
