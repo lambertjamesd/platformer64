@@ -144,12 +144,17 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
             int edgeIndex = vertexIndexToEdgeIndex(pointIndex);
             struct CollisionFace* otherFace = collisionGetAdjacentFace(face, edgeIndex);
             float hitDistance;
+            float otherFaceDot = 0.0f;
+
+            if (otherFace) {
+                otherFaceDot = vector3Dot(dir, &otherFace->plane.normal);
+            }
 
             if (edgeDistance.el[pointIndex] < moveDistance) {
                 struct CollisionEdge* edge = face->edges[edgeIndex];
                 moveDistance = edgeDistance.el[pointIndex];
 
-                if (otherFace && vector3Dot(&face->plane.normal, &otherFace->plane.normal) > 0.9999) {
+                if (otherFace && (vector3Dot(&face->plane.normal, &otherFace->plane.normal) > 0.9999 || otherFaceDot < 0.0f)) {
                     nextContact.target = otherFace;
                     nextContact.type = ColliderTypeMeshFace;
                     nextContact.normal = otherFace->plane.normal;
@@ -160,7 +165,8 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
             }
 
             if (
-                otherFace && 
+                otherFaceDot < 0.0f &&
+                edgeDistance.el[pointIndex] < sliderRadius * 2.0f &&
                 (hitDistance = slideSpherecastFaces(&sliderCenter, dir, sliderRadius, &raycastState, otherFace)) >= -ZERO_LIKE_TOLERANCE &&
                 hitDistance < moveDistance) {
 

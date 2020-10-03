@@ -42,14 +42,12 @@ void collisionFaceBaryDistanceToEdge(struct CollisionFace* face, struct Vector3*
     float timeDenom1 = vector3Dot(dir, &face->dotCompare1);
     float timeDenom2 = vector3Dot(dir, &face->dotCompare2);
 
-    float baryDenumInv = 1.0f / face->barycentricDenom;
-
     vector3Sub(origin, face->edges[0]->endpoints[face->edgeIndices[0]], &relativeOrigin);
 
     if (timeDenom0 < ZERO_TOLERANCE) {
         baryCoord->x = FLT_MAX;
     } else {
-        baryCoord->x = (baryDenumInv - vector3Dot(&relativeOrigin, &dotCompare0)) / timeDenom0;
+        baryCoord->x = (1.0f / face->barycentricDenom - vector3Dot(&relativeOrigin, &dotCompare0)) / timeDenom0;
     }
 
     if (timeDenom1 > -ZERO_TOLERANCE) {
