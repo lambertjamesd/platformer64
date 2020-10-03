@@ -13,8 +13,9 @@ struct CollisionFace {
     unsigned char edgeIndices[3];
     unsigned char unused;
     struct Plane plane;
-    struct Vector3 edgeDir[2];
     float barycentricDenom;
+    struct Vector3 dotCompare1;
+    struct Vector3 dotCompare2;
 };
 
 struct CollisionEdge {

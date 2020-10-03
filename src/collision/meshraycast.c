@@ -21,8 +21,8 @@ float raycastPlane(struct Vector3* origin, struct Vector3* dir, struct Plane* pl
 float spherecastPlane(struct Vector3* origin, struct Vector3* dir, struct Plane* plane, float radius) {
     struct Vector3 modifiedOrigin;
     modifiedOrigin.x = origin->x - plane->a * radius;
-    modifiedOrigin.x = origin->y - plane->b * radius;
-    modifiedOrigin.x = origin->z - plane->c * radius;
+    modifiedOrigin.y = origin->y - plane->b * radius;
+    modifiedOrigin.z = origin->z - plane->c * radius;
 
     float denom = vector3Dot(dir, &plane->normal);
     float originDistance = vector3Dot(&modifiedOrigin, &plane->normal) + plane->d;

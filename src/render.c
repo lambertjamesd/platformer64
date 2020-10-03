@@ -71,11 +71,13 @@ void checkIsTouching(struct CollisionMesh* mesh, struct Vector3* pos, float radi
     int i;
 
     for (i = 0; i < mesh->faceCount; ++i) {
-        struct Vector3 baryCoords;
-        struct Vector3 projectedPoint;
-        planeProjectOnto(&mesh->faces[i].plane, pos, &projectedPoint);
-        collisionFaceBaryCoord(&mesh->faces[i], &projectedPoint, &baryCoords);
-        isTouchingOut[i] = baryCoords.x >= 0 && baryCoords.y >= 0 &&  baryCoords.z >= 0;
+        // struct Vector3 baryCoords;
+        // struct Vector3 projectedPoint;
+        // planeProjectOnto(&mesh->faces[i].plane, pos, &projectedPoint);
+        // collisionFaceBaryCoord(&mesh->faces[i], &projectedPoint, &baryCoords);
+        // isTouchingOut[i] = baryCoords.x >= 0 && baryCoords.y >= 0 &&  baryCoords.z >= 0;
+
+        isTouchingOut[i] = (&mesh->faces[i] == gPlayer.lastContact.target);
     }
 }
 
@@ -106,7 +108,7 @@ Gfx* renderDebugCollision(Gfx* dl, struct CollisionMesh* mesh, char* isTouching)
                 struct CollisionFace* face = &mesh->faces[i];
                 gSPVertex(dl++, &gDebugVertices[vertexIndex], 3, 0);
                 for (edge = 0; edge < 3; ++edge) {
-                    struct Vector3* point = face->edges[edge]->endpoints[0];
+                    struct Vector3* point = face->edges[edge]->endpoints[face->edgeIndices[edge]];
                     gDebugVertices[vertexIndex].v.ob[0] = (short)(point->x * 256.0f);
                     gDebugVertices[vertexIndex].v.ob[1] = (short)(point->y * 256.0f);
                     gDebugVertices[vertexIndex].v.ob[2] = (short)(point->z * 256.0f);

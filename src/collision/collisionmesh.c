@@ -26,60 +26,42 @@
 
 void collisionFaceBaryCoord(struct CollisionFace* face, struct Vector3* in, struct Vector3* baryCoord) {
     struct Vector3 pointOffset;
-
     vector3Sub(in, face->edges[0]->endpoints[face->edgeIndices[0]], &pointOffset);
-
-    float d01 = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
-    float d20 = vector3Dot(&face->edgeDir[0], &pointOffset);
-    float d21 = vector3Dot(&face->edgeDir[1], &pointOffset);
-
-    baryCoord->y = (vector3Dot(&face->edgeDir[1], &face->edgeDir[1]) * d20 - d01 * d21) * face->barycentricDenom;
-    baryCoord->z = (vector3Dot(&face->edgeDir[0], &face->edgeDir[0]) * d21 - d01 * d20) * face->barycentricDenom;
+    baryCoord->y = vector3Dot(&pointOffset, &face->dotCompare1) * face->barycentricDenom;
+    baryCoord->z = vector3Dot(&pointOffset, &face->dotCompare2) * face->barycentricDenom;
     baryCoord->x = 1.0f - baryCoord->y - baryCoord->z;
 }
 
 void collisionFaceBaryDistanceToEdge(struct CollisionFace* face, struct Vector3* origin, struct Vector3* dir, struct Vector3* baryCoord) {
     struct Vector3 dotCompare0;
-    struct Vector3 dotCompare1;
-    struct Vector3 dotCompare2;
     struct Vector3 relativeOrigin;
 
-    float edgeDot = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
-    float edge0MagSqr = vector3MagSqrd(&face->edgeDir[0]);
-    float edge1MagSqr = vector3MagSqrd(&face->edgeDir[1]);
-
-    dotCompare1.x = edgeDot * face->edgeDir[1].x - edge1MagSqr * face->edgeDir[0].x;
-    dotCompare1.y = edgeDot * face->edgeDir[1].y - edge1MagSqr * face->edgeDir[0].y;
-    dotCompare1.z = edgeDot * face->edgeDir[1].z - edge1MagSqr * face->edgeDir[0].z;
-
-    dotCompare2.x = edgeDot * face->edgeDir[0].x - edge0MagSqr * face->edgeDir[1].x;
-    dotCompare2.y = edgeDot * face->edgeDir[0].y - edge0MagSqr * face->edgeDir[1].y;
-    dotCompare2.z = edgeDot * face->edgeDir[0].z - edge0MagSqr * face->edgeDir[1].z;
-
-    vector3Add(&dotCompare1, &dotCompare2, &dotCompare0);
+    vector3Add(&face->dotCompare1, &face->dotCompare2, &dotCompare0);
 
     float timeDenom0 = vector3Dot(dir, &dotCompare0);
-    float timeDenom1 = vector3Dot(dir, &dotCompare1);
-    float timeDenom2 = vector3Dot(dir, &dotCompare2);
+    float timeDenom1 = vector3Dot(dir, &face->dotCompare1);
+    float timeDenom2 = vector3Dot(dir, &face->dotCompare2);
 
-    vector3Sub(origin, face->edges[0]->endpoints[0], &relativeOrigin);
+    float baryDenumInv = 1.0f / face->barycentricDenom;
 
-    if (fabs(timeDenom0) < ZERO_TOLERANCE) {
+    vector3Sub(origin, face->edges[0]->endpoints[face->edgeIndices[0]], &relativeOrigin);
+
+    if (timeDenom0 < ZERO_TOLERANCE) {
         baryCoord->x = FLT_MAX;
     } else {
-        baryCoord->x = (-vector3Dot(&relativeOrigin, &dotCompare0) - 1.0f / face->barycentricDenom) / timeDenom0;
+        baryCoord->x = (baryDenumInv - vector3Dot(&relativeOrigin, &dotCompare0)) / timeDenom0;
     }
 
-    if (fabs(timeDenom1) < ZERO_TOLERANCE) {
+    if (timeDenom1 > -ZERO_TOLERANCE) {
         baryCoord->y = FLT_MAX;
     } else {
-        baryCoord->y = -vector3Dot(&relativeOrigin, &dotCompare1) / timeDenom1;
+        baryCoord->y = -vector3Dot(&relativeOrigin, &face->dotCompare1) / timeDenom1;
     }
 
-    if (fabs(timeDenom2) < ZERO_TOLERANCE) {
+    if (timeDenom2 > -ZERO_TOLERANCE) {
         baryCoord->z = FLT_MAX;
     } else {
-        baryCoord->z = -vector3Dot(&relativeOrigin, &dotCompare2) / timeDenom2;
+        baryCoord->z = -vector3Dot(&relativeOrigin, &face->dotCompare2) / timeDenom2;
     }
 }
 
@@ -171,6 +153,7 @@ void collisionJoinAdjacentEdges(struct CollisionMesh* target) {
                 firstEdge->faces[1] = secondEdge->faces[0];
                 firstEdge->edgeIndex[1] = secondEdge->edgeIndex[0];
                 firstEdge->faces[1]->edges[firstEdge->edgeIndex[1]] = firstEdge;
+                firstEdge->faces[1]->edgeIndices[firstEdge->edgeIndex[1]] = 1;
                 secondEdge->endpoints[0] = NULL;
                 secondEdge->endpoints[1] = NULL;
             }
@@ -205,6 +188,9 @@ void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from,
         struct Vector3* v0 = &from[i + 0];
         struct Vector3* v1 = &from[i + 1];
         struct Vector3* v2 = &from[i + 2];
+
+        struct Vector3 edgeDir0;
+        struct Vector3 edgeDir1;
         
         struct CollisionFace* face = &target->faces[faceIndex];
 
@@ -216,18 +202,30 @@ void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from,
         face->edgeIndices[1] = 0;
         face->edgeIndices[2] = 0;
 
-        vector3Sub(v1, v0, &face->edgeDir[0]);
-        vector3Sub(v2, v0, &face->edgeDir[1]);
+        vector3Sub(v1, v0, &edgeDir0);
+        vector3Sub(v2, v0, &edgeDir1);
 
-        float edgeDot = vector3Dot(&face->edgeDir[0], &face->edgeDir[1]);
+        float edgeDot = vector3Dot(&edgeDir0, &edgeDir1);
+        float edgeLength0 = vector3MagSqrd(&edgeDir0);
+        float edgeLength1 = vector3MagSqrd(&edgeDir1);
 
         face->barycentricDenom = 1.0f / (
-            vector3MagSqrd(&face->edgeDir[0]) * vector3MagSqrd(&face->edgeDir[1]) -
+            vector3MagSqrd(&edgeDir0) * vector3MagSqrd(&edgeDir1) -
             edgeDot * edgeDot
         );
 
+        face->dotCompare1.x = edgeLength1 * edgeDir0.x - edgeDot * edgeDir1.x;
+        face->dotCompare1.y = edgeLength1 * edgeDir0.y - edgeDot * edgeDir1.y;
+        face->dotCompare1.z = edgeLength1 * edgeDir0.z - edgeDot * edgeDir1.z;
+
+        face->dotCompare2.x = edgeLength0 * edgeDir1.x - edgeDot * edgeDir0.x;
+        face->dotCompare2.y = edgeLength0 * edgeDir1.y - edgeDot * edgeDir0.y;
+        face->dotCompare2.z = edgeLength0 * edgeDir1.z - edgeDot * edgeDir0.z;
+
+        struct Vector3 dotCompare2;
+
         struct Vector3 normal;
-        vector3Cross(&face->edgeDir[0], &face->edgeDir[1], &normal);
+        vector3Cross(&edgeDir0, &edgeDir1, &normal);
         vector3Normalize(&normal, &normal);
         planeFromNormalPoint(&normal, v0, &face->plane);
 

@@ -120,7 +120,7 @@ void updatePlayerJump(struct Player* player) {
 }
 
 void updatePlayerPause(struct Player* player) {
-    if (contGetButton(A_BUTTON, 0)) {
+    if (contGetButton(B_BUTTON, 0)) {
         player->currentState = updatePlayerFreefall;
     }
 }

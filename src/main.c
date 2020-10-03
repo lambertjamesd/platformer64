@@ -36,9 +36,9 @@ struct Vector3 gDebugMeshData[] = {
     {-5.0f, 0.0f, -5.0f},
     {-5.0f, 0.0f, 5.0f},
 
-    // {-5.0f, 0.0f, -5.0f},
-    // {5.0f, 0.0f, -5.0f},
-    // {-5.0f, 0.5f, -10.0f},
+    {-5.0f, 0.0f, -5.0f},
+    {5.0f, 0.0f, -5.0f},
+    {-5.0f, 0.5f, -10.0f},
     // {5.0f, 0.5f, -10.0f},
     // {-5.0f, 0.5f, -10.0f},
     // {5.0f, 0.0f, -5.0f},
@@ -58,7 +58,7 @@ struct Vector3 gDebugMeshData[] = {
     // {5.0f, 1.0f, -5.0f},
 };
 
-#define USE_DEBUGGER  1
+#define USE_DEBUGGER  0
 
 /*
  *  Handler

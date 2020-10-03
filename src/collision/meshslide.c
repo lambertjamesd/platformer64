@@ -133,14 +133,6 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
 
     collisionFaceBaryDistanceToEdge(face, &point->contact, dir, &edgeDistance);
 
-    gdbSendMessage(GDBDataTypeText, gTmpBufferFoo, sprintf(
-        gTmpBufferFoo, 
-        "%d %d %d", 
-        fabs(edgeDistance.x) < 100.0f ? (int)(100 * edgeDistance.x) : 0, 
-        fabs(edgeDistance.y) < 100.0f ? (int)(100 * edgeDistance.y) : 0, 
-        fabs(edgeDistance.z) < 100.0f ? (int)(100 * edgeDistance.z) : 0
-    ));
-
     struct SlideRaycastState raycastState;
     raycastState.checkedFaces[0] = face;
     raycastState.checkedFaceCount = 1;
