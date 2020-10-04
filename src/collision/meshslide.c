@@ -291,9 +291,15 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
         float edgeLerp = vector3Dot(&pointOffset, &edgeOffset) / edgeLength + edgeLerpDelta;
 
         if (edgeLerpDelta > 0.0f && edgeLerp > 1.0f) {
-            return slideContactPointEdgeToEndpoint(point, edge, 0);
+            struct SlideResult result = slideContactPointEdgeToEndpoint(point, edge, 0);
+            vector3Lerp(&face->plane.normal, &point->normal, (edgeLerp - 1.0f) / edgeLerpDelta, &point->normal);
+            vector3Normalize(&point->normal, &point->normal);
+            return result;
         } else if (edgeLerpDelta < 0.0f && edgeLerp < 0.0f) {
-            return slideContactPointEdgeToEndpoint(point, edge, 1);
+            struct SlideResult result = slideContactPointEdgeToEndpoint(point, edge, 1);
+            vector3Lerp(&face->plane.normal, &point->normal, -edgeLerp / edgeLerpDelta, &point->normal);
+            vector3Normalize(&point->normal, &point->normal);
+            return result;
         } else {
             struct Vector3 offset;
             struct Vector3 finalPos;
@@ -302,6 +308,7 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
             point->target = edge;
             point->type = ColliderTypeMeshEdge;
             vector3Add(edge->endpoints[0], &offset, &point->contact);
+            point->normal = face->plane.normal;
 
             struct SlideResult result;
             result.type = SlideResultComplete;
