@@ -200,18 +200,6 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
     return result;
 }
 
-struct SlideResult slideContactPointEdgeToEndpoint(struct ContactPoint* point, struct CollisionEdge* edge, int endpointIndex) {
-    struct SlideResult result;
-    result.type = SlideResultNewContact;
-    result.moveDistance = sqrtf(vector3DistSqrd(edge->endpoints[endpointIndex], &point->contact));
-    
-    point->target = edge;
-    point->type = ColliderTypeMeshEdgeEnd0 + endpointIndex;
-    point->contact = *edge->endpoints[endpointIndex];
-
-    return result;
-}
-
 struct SlideResult slideContactPointEdge(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
     struct CollisionEdge* edge = (struct CollisionEdge*)point->target;
 
@@ -241,6 +229,9 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
     struct Vector3 edgeOffset;
     struct Vector3 movePlaneNormal;
 
+    struct Vector3 finalPos;
+    struct Vector3 finalNormal;
+
     vector3Sub(edge->endpoints[1], edge->endpoints[0], &edgeOffset);
     vector3Cross(&point->normal, dir, &movePlaneNormal);
 
@@ -250,9 +241,9 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
     // check if dir slides parallel to the edge
     if (fabs(denom) < ZERO_LIKE_TOLERANCE || !edge->faces[1]) {
         struct Vector3 offset;
-        struct Vector3 finalPos;
         vector3Scale(dir, &offset, distance);
         vector3Add(&point->contact, &offset, &finalPos);
+        finalNormal = point->normal;
 
         struct Vector3 pointOffset;
         vector3Sub(&finalPos, edge->endpoints[0], &pointOffset);
@@ -260,9 +251,15 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
         float pointDot = vector3Dot(&edgeOffset, &pointOffset);
 
         if (pointDot < 0.0f) {
-            return slideContactPointEdgeToEndpoint(point, edge, 0);
+            finalPos = *edge->endpoints[0];
+
+            point->target = edge;
+            point->type = ColliderTypeMeshEdgeEnd0;
         } else if (pointDot > edgeLength) {
-            return slideContactPointEdgeToEndpoint(point, edge, 1);
+            finalPos = *edge->endpoints[1];
+
+            point->target = edge;
+            point->type = ColliderTypeMeshEdgeEnd1;
         } else {
             if (!edge->faces[1]) {
                 // project the final point into the edge
@@ -272,12 +269,6 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
 
             point->target = edge;
             point->type = ColliderTypeMeshEdge;
-            point->contact = finalPos;
-
-            struct SlideResult result;
-            result.type = SlideResultComplete;
-            result.moveDistance = distance;
-            return result;
         }
     } else {
         struct Vector3 normalOffset;
@@ -291,34 +282,56 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
         float edgeLerp = vector3Dot(&pointOffset, &edgeOffset) / edgeLength + edgeLerpDelta;
 
         if (edgeLerpDelta > 0.0f && edgeLerp > 1.0f) {
-            struct SlideResult result = slideContactPointEdgeToEndpoint(point, edge, 0);
-            vector3Lerp(&face->plane.normal, &point->normal, (edgeLerp - 1.0f) / edgeLerpDelta, &point->normal);
-            vector3Normalize(&point->normal, &point->normal);
-            return result;
+            finalPos = *edge->endpoints[0];
+            vector3Lerp(&face->plane.normal, &point->normal, (edgeLerp - 1.0f) / edgeLerpDelta, &finalNormal);
+            vector3Normalize(&finalNormal, &finalNormal);
+
+            point->target = edge;
+            point->type = ColliderTypeMeshEdgeEnd0;
         } else if (edgeLerpDelta < 0.0f && edgeLerp < 0.0f) {
-            struct SlideResult result = slideContactPointEdgeToEndpoint(point, edge, 1);
-            vector3Lerp(&face->plane.normal, &point->normal, -edgeLerp / edgeLerpDelta, &point->normal);
-            vector3Normalize(&point->normal, &point->normal);
-            return result;
+            finalPos = *edge->endpoints[1];
+            vector3Lerp(&face->plane.normal, &point->normal, -edgeLerp / edgeLerpDelta, &finalNormal);
+            vector3Normalize(&finalNormal, &finalNormal);
+
+            point->target = edge;
+            point->type = ColliderTypeMeshEdgeEnd1;
         } else {
             struct Vector3 offset;
-            struct Vector3 finalPos;
             vector3Scale(&edgeOffset, &offset, edgeLerp);
 
             point->target = edge;
             point->type = ColliderTypeMeshEdge;
-            vector3Add(edge->endpoints[0], &offset, &point->contact);
-            point->normal = face->plane.normal;
-
-            struct SlideResult result;
-            result.type = SlideResultComplete;
-            result.moveDistance = distance;
-            return result;
+            vector3Add(edge->endpoints[0], &offset, &finalPos);
+            finalNormal = face->plane.normal;
         }
+    }
 
+    struct Vector3 startCenter;
+    struct Vector3 endCenter;
+
+    vector3AddScaled(&point->contact, &point->normal, sliderRadius, &startCenter);
+    vector3AddScaled(&finalPos, &finalNormal, sliderRadius, &endCenter);
+
+    float targetMoveDistance = sqrtf(vector3DistSqrd(&startCenter, &endCenter));
+
+    if (targetMoveDistance <= distance) {
         struct SlideResult result;
         result.type = SlideResultNewContact;
-        result.moveDistance = 0.0f;
+        result.moveDistance = targetMoveDistance;
+        return result;
+    } else {
+        point->target = edge;
+        point->type = ColliderTypeMeshEdge;
+
+        float lerpValue = distance / targetMoveDistance;
+        
+        vector3Lerp(&point->contact, &finalPos, lerpValue, &point->contact);
+        vector3Lerp(&point->normal, &finalNormal, lerpValue, &point->normal);
+        vector3Normalize(&finalNormal, &finalNormal);
+
+        struct SlideResult result;
+        result.type = SlideResultComplete;
+        result.moveDistance = distance;
         return result;
     }
 }

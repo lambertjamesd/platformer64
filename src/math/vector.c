@@ -24,6 +24,12 @@ void vector3Add(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
     out->z = a->z + b->z;   
 }
 
+void vector3AddScaled(struct Vector3* a, struct Vector3* normal, float scale, struct Vector3* out) {
+    out->x = a->x + normal->x * scale;
+    out->y = a->y + normal->y * scale;
+    out->z = a->z + normal->z * scale;
+}
+
 void vector3Sub(struct Vector3* a, struct Vector3* b, struct Vector3* out) {
     out->x = a->x - b->x;
     out->y = a->y - b->y;
