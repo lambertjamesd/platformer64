@@ -315,6 +315,9 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
     float targetMoveDistance = sqrtf(vector3DistSqrd(&startCenter, &endCenter));
 
     if (targetMoveDistance <= distance) {
+        point->contact = finalPos;
+        point->normal = finalNormal;
+
         struct SlideResult result;
         result.type = SlideResultNewContact;
         result.moveDistance = targetMoveDistance;
