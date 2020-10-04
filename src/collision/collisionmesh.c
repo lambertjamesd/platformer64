@@ -38,9 +38,9 @@ void collisionFaceBaryDistanceToEdge(struct CollisionFace* face, struct Vector3*
 
     vector3Add(&face->dotCompare1, &face->dotCompare2, &dotCompare0);
 
-    float timeDenom0 = vector3Dot(dir, &dotCompare0);
     float timeDenom1 = vector3Dot(dir, &face->dotCompare1);
     float timeDenom2 = vector3Dot(dir, &face->dotCompare2);
+    float timeDenom0 = timeDenom1 + timeDenom2;
 
     vector3Sub(origin, face->edges[0]->endpoints[face->edgeIndices[0]], &relativeOrigin);
 
@@ -61,6 +61,12 @@ void collisionFaceBaryDistanceToEdge(struct CollisionFace* face, struct Vector3*
     } else {
         baryCoord->z = -vector3Dot(&relativeOrigin, &face->dotCompare2) / timeDenom2;
     }
+}
+
+float collisionFaceBaryDir(struct CollisionFace* face, struct Vector3* dir, struct Vector3* baryCoord) {
+    baryCoord->y = vector3Dot(dir, &face->dotCompare1);
+    baryCoord->z = vector3Dot(dir, &face->dotCompare2);
+    baryCoord->x = -(baryCoord->y + baryCoord->z);
 }
 
 void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* baryCoord, struct Vector3* out) {
@@ -252,6 +258,14 @@ int vertexIndexToEdgeIndex(int vertexIndex) {
         return 0;
     } else {
         return vertexIndex + 1;
+    }
+}
+
+int edgeIndexToVertexIndex(int edgeIndex) {
+    if (edgeIndex == 0) {
+        return 2;
+    } else {
+        return edgeIndex - 1;
     }
 }
 

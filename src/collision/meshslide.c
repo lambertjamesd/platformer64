@@ -82,7 +82,7 @@ float slideSpherecastEdges(struct Vector3* origin, struct Vector3* dir, float ra
 }
 
 float slideSpherecastFaces(struct Vector3* origin, struct Vector3* dir, float radius, struct SlideRaycastState* castState, struct CollisionFace* checkFace) {
-    if (!slideStateHasFace(castState, checkFace)) {
+    if (checkFace && !slideStateHasFace(castState, checkFace)) {
         slideStateMarkFace(castState, checkFace);
 
         float result = spherecastPlane(origin, dir, &checkFace->plane, radius);
@@ -200,10 +200,129 @@ struct SlideResult slideContactPointFace(struct ContactPoint* point, float slide
     return result;
 }
 
+struct SlideResult slideContactPointEdgeToEndpoint(struct ContactPoint* point, struct CollisionEdge* edge, int endpointIndex) {
+    struct SlideResult result;
+    result.type = SlideResultNewContact;
+    result.moveDistance = sqrtf(vector3DistSqrd(edge->endpoints[endpointIndex], &point->contact));
+    
+    point->target = edge;
+    point->type = ColliderTypeMeshEdgeEnd0 + endpointIndex;
+    point->contact = *edge->endpoints[endpointIndex];
+
+    return result;
+}
+
+struct SlideResult slideContactPointEdge(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
+    struct CollisionEdge* edge = (struct CollisionEdge*)point->target;
+
+    float faceDot[2];
+    faceDot[0] = vector3Dot(dir, &edge->faces[0]->plane.normal);
+    faceDot[1] = edge->faces[1] ? vector3Dot(dir, &edge->faces[1]->plane.normal) : faceDot[0];
+
+    int faceIndex = faceDot[0] < faceDot[1];
+
+    struct Vector3 moveDir;
+    collisionFaceBaryDir(edge->faces[faceIndex], dir, &moveDir);
+
+    struct CollisionFace* face = edge->faces[faceIndex];
+    int otherEdgeIndex = edge->edgeIndex[faceIndex];
+
+    if (faceDot[faceIndex] < ZERO_LIKE_TOLERANCE && moveDir.el[edgeIndexToVertexIndex(otherEdgeIndex)] > 0.0f) {
+        point->target = face;
+        point->type = ColliderTypeMeshFace;
+        point->normal = face->plane.normal;
+
+        struct SlideResult result;
+        result.type = SlideResultNewContact;
+        result.moveDistance = 0.0f;
+        return result;
+    }
+    
+    struct Vector3 edgeOffset;
+    struct Vector3 movePlaneNormal;
+
+    vector3Sub(edge->endpoints[1], edge->endpoints[0], &edgeOffset);
+    vector3Cross(&point->normal, dir, &movePlaneNormal);
+
+    float denom = vector3Dot(&edgeOffset, &movePlaneNormal);
+    float edgeLength = vector3MagSqrd(&edgeOffset);
+
+    // check if dir slides parallel to the edge
+    if (fabs(denom) < ZERO_LIKE_TOLERANCE || !edge->faces[1]) {
+        struct Vector3 offset;
+        struct Vector3 finalPos;
+        vector3Scale(dir, &offset, distance);
+        vector3Add(&point->contact, &offset, &finalPos);
+
+        struct Vector3 pointOffset;
+        vector3Sub(&finalPos, edge->endpoints[0], &pointOffset);
+
+        float pointDot = vector3Dot(&edgeOffset, &pointOffset);
+
+        if (pointDot < 0.0f) {
+            return slideContactPointEdgeToEndpoint(point, edge, 0);
+        } else if (pointDot > edgeLength) {
+            return slideContactPointEdgeToEndpoint(point, edge, 1);
+        } else {
+            if (!edge->faces[1]) {
+                // project the final point into the edge
+                vector3Scale(&edgeOffset, &offset, pointDot / edgeLength);
+                vector3Add(edge->endpoints[0], &offset, &finalPos);
+            }
+
+            point->target = edge;
+            point->type = ColliderTypeMeshEdge;
+            point->contact = finalPos;
+
+            struct SlideResult result;
+            result.type = SlideResultComplete;
+            result.moveDistance = distance;
+            return result;
+        }
+    } else {
+        struct Vector3 normalOffset;
+        struct Vector3 pointOffset;
+
+        vector3Sub(&point->normal, &face->plane.normal, &normalOffset);
+        vector3Sub(&point->contact, edge->endpoints[0], &pointOffset);
+
+        float edgeLerpDelta = sliderRadius * vector3Dot(&normalOffset, &movePlaneNormal) / denom;
+
+        float edgeLerp = vector3Dot(&pointOffset, &edgeOffset) / edgeLength + edgeLerpDelta;
+
+        if (edgeLerpDelta > 0.0f && edgeLerp > 1.0f) {
+            return slideContactPointEdgeToEndpoint(point, edge, 0);
+        } else if (edgeLerpDelta < 0.0f && edgeLerp < 0.0f) {
+            return slideContactPointEdgeToEndpoint(point, edge, 1);
+        } else {
+            struct Vector3 offset;
+            struct Vector3 finalPos;
+            vector3Scale(&edgeOffset, &offset, edgeLerp);
+
+            point->target = edge;
+            point->type = ColliderTypeMeshEdge;
+            vector3Add(edge->endpoints[0], &offset, &point->contact);
+
+            struct SlideResult result;
+            result.type = SlideResultComplete;
+            result.moveDistance = distance;
+            return result;
+        }
+
+        struct SlideResult result;
+        result.type = SlideResultNewContact;
+        result.moveDistance = 0.0f;
+        return result;
+    }
+}
+
+
 struct SlideResult slideContactPoint(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
     switch (point->type) {
         case ColliderTypeMeshFace:
             return slideContactPointFace(point, sliderRadius, dir, distance);
+        case ColliderTypeMeshEdge:
+            return slideContactPointEdge(point, sliderRadius, dir, distance);
     }
 
     struct SlideResult result;
