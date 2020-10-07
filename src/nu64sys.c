@@ -1,11 +1,4 @@
-/*---------------------------------------------------------------------
-  File  : nu64sys.c
 
-  Created  by  Yoshitaka Yasumoto.   Jul,11 1995.
-  Modified by  Atushi Watanabe	     Sep, 1 1997
-  
-  Copyright by Nintendo, Co., Ltd. 1995.
-  ---------------------------------------------------------------------*/
 #include	<ultra64.h>
 #include	<ramrom.h>
 #include	"nu64sys.h"

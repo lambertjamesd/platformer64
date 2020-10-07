@@ -1,11 +1,4 @@
-/*---------------------------------------------------------------------
-  File   : thread.h
 
-  Created  by  Yoshitaka Yasumoto.   Jul,11 1995.
-  Modified by  
-  
-  Copyright by Nintendo, Co., Ltd. 1995.
-  ---------------------------------------------------------------------*/
 #ifndef	_thread_h_
 #define	_thread_h_
 

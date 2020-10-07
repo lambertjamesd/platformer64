@@ -12,8 +12,6 @@
 
 #define TIME_TILL_BARY_EDGE(baryCoord, vel) (fabs(vel) < ZERO_LIKE_TOLERANCE ? -1.0f : (-baryCoord / vel))
 
-char gTmpBufferFoo[1000];
-
 int slideStateHasFace(struct SlideRaycastState* state, struct CollisionFace* face) {
     int i;
     for (i = 0; i < state->checkedFaceCount; ++i) {
@@ -339,6 +337,16 @@ struct SlideResult slideContactPointEdge(struct ContactPoint* point, float slide
     }
 }
 
+struct SlideResult slideContactPointEndpoint(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
+    struct Vector3 planeNormal;
+
+    vector3Cross(&point->normal, dir, &planeNormal);
+
+    struct SlideResult result;
+    result.type = SlideResultComplete;
+    result.moveDistance = distance;
+    return result;
+}
 
 struct SlideResult slideContactPoint(struct ContactPoint* point, float sliderRadius, struct Vector3* dir, float distance) {
     switch (point->type) {

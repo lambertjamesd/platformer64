@@ -69,6 +69,44 @@ float collisionFaceBaryDir(struct CollisionFace* face, struct Vector3* dir, stru
     baryCoord->x = -(baryCoord->y + baryCoord->z);
 }
 
+struct CollisionEdge* collisionNextEdge(struct CollisionEdge* edge, int endpointIndex, int* nextEndpointIndex) {
+    struct CollisionFace* face = edge->faces[endpointIndex];
+
+    if (!face) {
+        return NULL;
+    }
+
+    int edgeIndex = edge->edgeIndex[endpointIndex];
+
+    if (edgeIndex == 0) {
+        edgeIndex = 2;
+    } else {
+        edgeIndex -= 1;
+    }
+
+    *nextEndpointIndex = face->edgeIndices[edgeIndex] ^ 0x1;
+    return face->edges[edgeIndex];
+}
+
+struct CollisionEdge* collisionPrevEdge(struct CollisionEdge* edge, int endpointIndex, int *nextEndpointIndex) {
+    struct CollisionFace* face = edge->faces[endpointIndex ^ 0x1];
+
+    if (!face) {
+        return NULL;
+    }
+
+    int edgeIndex = edge->edgeIndex[endpointIndex];
+
+    if (edgeIndex == 2) {
+        edgeIndex = 0;
+    } else {
+        edgeIndex += 1;
+    }
+
+    *nextEndpointIndex = face->edgeIndices[edgeIndex];
+    return face->edges[edgeIndex];
+}
+
 void collisionFaceFromBaryCoord(struct CollisionFace* face, struct Vector3* baryCoord, struct Vector3* out) {
     struct Vector3* a = face->edges[0]->endpoints[face->edgeIndices[0]];
     struct Vector3* b = face->edges[1]->endpoints[face->edgeIndices[1]];
@@ -164,21 +202,21 @@ void collisionJoinAdjacentEdges(struct CollisionMesh* target) {
         }
     }
 
-    // secondEdgeIndex = 0;
-    // for (firstEdgeIndex = 0; firstEdgeIndex < target->edgeCount; ++firstEdgeIndex) {
-    //     struct CollisionEdge* firstEdge = &target->edges[firstEdgeIndex];
+    secondEdgeIndex = 0;
+    for (firstEdgeIndex = 0; firstEdgeIndex < target->edgeCount; ++firstEdgeIndex) {
+        struct CollisionEdge* firstEdge = &target->edges[firstEdgeIndex];
 
-    //     if (firstEdge->endpoints[0] && firstEdge->endpoints[1]) {
-    //         if (firstEdgeIndex != secondEdgeIndex) {
-    //             collisionReplaceEdges(firstEdge, &target->edges[secondEdgeIndex]);
-    //             target->edges[secondEdgeIndex] = *firstEdge;
-    //         }
+        if (firstEdge->endpoints[0] && firstEdge->endpoints[1]) {
+            if (firstEdgeIndex != secondEdgeIndex) {
+                collisionReplaceEdges(firstEdge, &target->edges[secondEdgeIndex]);
+                target->edges[secondEdgeIndex] = *firstEdge;
+            }
 
-    //         ++secondEdgeIndex;
-    //     }
-    // }
+            ++secondEdgeIndex;
+        }
+    }
 
-    // target->edgeCount = secondEdgeIndex;
+    target->edgeCount = secondEdgeIndex;
 }
 
 void collisionFillDebugShape(struct CollisionMesh* target, struct Vector3* from, int fromCount) {

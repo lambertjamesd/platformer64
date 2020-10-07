@@ -1,9 +1,4 @@
-/*---------------------------------------------------------------------
-  Copyright (C) 1999 Nintendo.
 
-  File   		main.c
-  Comment	   	1M FLASH TEST(ver 1.25 for flash library 7.6)
-  ---------------------------------------------------------------------*/
 #include <ultra64.h>
 #include  <string.h>
 #include "nu64sys.h"
