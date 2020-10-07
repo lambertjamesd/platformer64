@@ -1,6 +1,7 @@
 
 #include "vector.h"
 #include "fastsqrt.h"
+#include <math.h>
 
 struct Vector3 gRight = {1.0f, 0.0f, 0.0f};
 struct Vector3 gUp = {0.0f, 1.0f, 0.0f};
@@ -82,4 +83,17 @@ void vector3ProjectPlane(struct Vector3* in, struct Vector3* normal, struct Vect
     out->x = in->x - normal->x * mag;
     out->y = in->y - normal->y * mag;
     out->z = in->z - normal->z * mag;
+}
+
+void vector3MoveTowards(struct Vector3* from, struct Vector3* towards, float maxDistance, struct Vector3* out) {
+    float distance = vector3DistSqrd(from, towards);
+
+    if (distance < maxDistance * maxDistance) {
+        *out = *towards;
+    } else {
+        float scale = maxDistance / sqrtf(distance);
+        out->x = (towards->x - from->x) * scale + from->x;
+        out->y = (towards->y - from->y) * scale + from->y;
+        out->z = (towards->z - from->z) * scale + from->z;
+    }
 }

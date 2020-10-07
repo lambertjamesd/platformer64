@@ -15,6 +15,7 @@ void updatePlayerPause(struct Player* player);
 #define JUMP_ACCEL          20.0f
 #define DOWNWARD_GRAVITY    40.0f
 #define JUMP_HOLD_TIME      0.5f
+#define FLOAT_ACCEL         80.0f
 
 struct Player gPlayer = {
   updatePlayerPause,
@@ -56,8 +57,8 @@ void updatePlayerWalk(struct Player* player) {
     struct Vector3 dir;
     playerGetSurfaceDirection(player, &player->lastContact.normal, &horzVel);
 
-    player->velocity.x = horzVel.x * 10.0f;
-    player->velocity.z = horzVel.z * 10.0f;
+    player->velocity.x = horzVel.x * 5.0f;
+    player->velocity.z = horzVel.z * 5.0f;
 
     vector3ProjectPlane(&player->velocity, &player->lastContact.normal, &horzVel);
 
@@ -83,6 +84,15 @@ void updatePlayerFreefall(struct Player* player) {
     player->velocity.y -= DOWNWARD_GRAVITY * gTimeDelta;
 
     struct Vector3 moveOffset;
+
+    struct Vector3 horzVel;
+    playerGetSurfaceDirection(player, &gUp, &horzVel);
+
+    horzVel.x = horzVel.x * 10.0f + player->velocity.x;
+    horzVel.y = player->velocity.y;
+    horzVel.z = horzVel.z * 10.0f + player->velocity.z;
+
+    vector3MoveTowards(&player->velocity, &horzVel, FLOAT_ACCEL * gTimeDelta, &player->velocity);
 
     struct CollisionCapsule capsule;
     vector3Scale(&player->velocity, &moveOffset, gTimeDelta);
